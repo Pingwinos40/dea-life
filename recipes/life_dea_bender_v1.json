@@ -1,7 +1,7 @@
 {
   "schema": "sldea-lifecycle/1",
   "name": "LIFE-DEA bender v1",
-  "description": "Bender lifecycle at 1.75 kV-class drive (IROS campaign articles, 10x20 / 20x40 mm multilayer): 2 Hz cycling within the Trek current budget for nF-class stacks, fast interlude per 1e3 cycles, full per 2.5e4, 1e5-cycle cap (10x the 1e4 bench-claim gate). Side-view deflection via the bender vision pipeline.",
+  "description": "LIFE-DEA (Lifecycle Interrogation for Flight Environments) bender variant at 1.75 kV-class drive (IROS campaign articles, 10x20 / 20x40 mm multilayer): 2 Hz cycling within the Trek current budget for nF-class stacks, fast interlude per 1e3 cycles, full per 2.5e4, 1e5-cycle cap (10x the 1e4 bench-claim gate). Side-view deflection via the bender vision pipeline.",
   "geometry": "bender",
   "drive": {"waveform": "SINE", "freq_hz": 2.0,
             "v_pk": {"kv": 1.75}, "v_min_kv": 0.0},

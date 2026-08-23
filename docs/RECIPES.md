@@ -77,9 +77,10 @@ precursor ordering is itself the scientific result).
 
 ## Shipped templates
 
-- `life_dea_planar_v1.json` — the flagship LIFE-DEA protocol
-  (stratosphere-paper lineage): 50% of median E_BD, fast interlude per
-  10³ cycles, full per 5×10⁴, 10⁶-cycle cap. A specimen reaching the
+- `life_dea_planar_v1.json` — the flagship **LIFE-DEA** protocol
+  (**L**ifecycle **I**nterrogation for **F**light **E**nvironments —
+  DEA; stratosphere-paper lineage): 50% of median E_BD, fast interlude
+  per 10³ cycles, full per 5×10⁴, 10⁶-cycle cap. A specimen reaching the
   cap is a SUSPENSION (right-censored) — the claim reads "N cycles
   without dielectric breakdown".
 - `life_dea_bender_v1.json` — bender variant at 1.75 kV / 2 Hz
