@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+test_failures/
+*.log
+# Run data never enters the repo (lives under data_root)
+sldea-runs/

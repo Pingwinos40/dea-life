@@ -1,0 +1,11 @@
+# LF everywhere: lib/ must stay byte-identical to the upstream
+# Digital-Multitool checkout (lib/VENDOR.md re-vendoring contract --
+# a CRLF rewrite would make every re-vendor diff a full-file change),
+# and the bench PC is Linux.
+* text=auto eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.conf text eol=lf
+*.png binary

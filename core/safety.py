@@ -1,0 +1,171 @@
+"""Mode ladder, gate chain, Paschen interlock, typed confirmations.
+
+Every gate carries its provenance -- the Digital Multitool incident or
+audit that forced it. The chain runs before ARMED; each gate returns a
+GateResult and the engine refuses to arm unless every required gate
+passed. docs/SAFETY.md restates this file in prose.
+
+Modes: mock -> dry (default) -> live. Promotion is explicit per
+invocation (--mode live); nothing ever stores an armed state (the
+sldea_presets rule). live additionally requires Linux
+(INSTRUMENTS_SUPPORTED lineage, gui.py:178).
+"""
+import sys
+
+MODES = ('mock', 'dry', 'live')
+
+# Typed confirmations: the engine never blocks on stdin itself -- the
+# CLI/GUI collects the text and passes it in as a command. The token
+# must match VERBATIM.
+CONFIRM_ENERGIZE = 'ENERGIZE'
+CONFIRM_BLIND = 'BLIND'                       # scope missing, run anyway
+
+
+def paschen_override_token(run_id):
+    return f'OVERRIDE PASCHEN {run_id}'
+
+
+class GateResult:
+    def __init__(self, gate, ok, detail='', fix=None):
+        self.gate = gate
+        self.ok = ok
+        self.detail = detail
+        self.fix = fix                # optional callable: one-click fix
+
+    def __repr__(self):
+        return f'GateResult({self.gate}, {"PASS" if self.ok else "FAIL"})'
+
+
+def platform_ok(mode):
+    """live drives instruments through PyVISA-py/USB-TMC, which this lab
+    runs on the RHEL9 bench only (gui.py:178 semantics)."""
+    if mode != 'live':
+        return GateResult('platform', True, f'mode {mode}: any OS')
+    if sys.platform.startswith('linux'):
+        return GateResult('platform', True, 'linux bench')
+    return GateResult(
+        'platform', False,
+        f'live mode requires the Linux bench (this is {sys.platform}); '
+        f'use --mode mock or --mode dry here')
+
+
+def paschen_inhibited(p_pa, band_pa):
+    """True when HV must be inhibited at this attested pressure.
+
+    The band (default 1 Pa .. 10 kPa, admin_caps.json, PLACEHOLDER
+    pending lab review) covers the Paschen-minimum region where
+    breakdown voltage of mm-scale gaps collapses; pump-down and vent
+    both transit it. p_pa None (no attestation yet) counts as inhibited
+    -- no attestation, no HV."""
+    if p_pa is None:
+        return True
+    lo, hi = float(band_pa[0]), float(band_pa[1])
+    return lo <= float(p_pa) <= hi
+
+
+def gate_chain(mode, hal, resolved, cap_kv, run_id, env_sample,
+               paschen_band_pa, confirmations, log):
+    """Run every pre-arm gate; returns (all_ok, [GateResult]).
+
+    `confirmations` is a set of typed tokens already collected by the
+    front end (CONFIRM_ENERGIZE, CONFIRM_BLIND, paschen override).
+    Ordering matters and is preserved from the proven chain
+    (gui.py:3075-3230): platform -> drive present -> monitor present or
+    typed BLIND -> monitor windows -> feasibility -> specimen cap ->
+    Paschen -> ENERGIZE. Camera preflight and the watchdog baseline
+    learn run AFTER arming, inside the executors, exactly as upstream.
+    """
+    results = []
+
+    def add(gate, ok, detail='', fix=None):
+        r = GateResult(gate, ok, detail, fix)
+        results.append(r)
+        log(f"gate {gate}: {'PASS' if ok else 'FAIL'}"
+            + (f' -- {detail}' if detail else ''))
+        return ok
+
+    add('platform', *_split(platform_ok(mode)))
+
+    if mode == 'live':
+        add('drive_connected', hal.drive is not None and
+            hal.drive.connected(),
+            'signal generator reachable' if hal.drive and
+            hal.drive.connected() else 'signal generator NOT reachable')
+    else:
+        add('drive_connected', True, f'{mode}: drive not required live')
+
+    mon_ok = hal.monitor is not None and hal.monitor.connected()
+    if mon_ok:
+        add('monitor_connected', True, 'scope reachable')
+        problems, fixplan = hal.monitor.check_window(
+            max_kv=max(resolved['drive'].get('v_pk_kv') or 0.0,
+                       resolved['reference']['ref_kv']),
+            trip_ua=_trip_ua(resolved),
+            freq_hz=resolved['drive']['freq_hz'])
+        add('monitor_window', not problems,
+            '; '.join(problems) if problems else
+            'monitor vertical + horizontal windows sane',
+            fix=fixplan)
+    elif mode == 'live':
+        # Scope-less live run: the watchdog is blind from the start.
+        # Allowed only behind a typed confirmation (upstream askyesno
+        # default-no, hardened to typed for unattended lifecycle runs).
+        add('monitor_connected', CONFIRM_BLIND in confirmations,
+            'scope NOT reachable -- type BLIND to run without current '
+            'monitoring (watchdog disabled; strongly discouraged for '
+            'lifecycle runs)')
+    else:
+        add('monitor_connected', True, f'{mode}: scope not required')
+
+    feas = resolved.get('feasibility')
+    if feas is None:
+        add('feasibility', True, 'no drive voltage resolved (no cycling)')
+    else:
+        add('feasibility', feas['verdict'] != 'refuse',
+            '; '.join(feas['msgs']) or
+            f"I_pk {feas['i_pk_ua']:.0f} uA "
+            f"({100 * (feas['i_frac'] or 0):.0f}% of Trek limit)")
+
+    vpk = resolved['drive'].get('v_pk_kv') or 0.0
+    add('specimen_cap', vpk <= cap_kv + 1e-9,
+        f'drive {vpk:g} kV vs hard cap {cap_kv:g} kV (admin_caps.json)')
+
+    p_pa = None if env_sample is None else env_sample.get('p_pa')
+    inhibited = paschen_inhibited(p_pa, paschen_band_pa)
+    overridden = paschen_override_token(run_id) in confirmations
+    if inhibited and not overridden:
+        add('paschen', False,
+            f"attested pressure "
+            f"{'(none)' if p_pa is None else f'{p_pa:g} Pa'} is inside "
+            f"the HV-inhibit band {paschen_band_pa[0]:g}.."
+            f"{paschen_band_pa[1]:g} Pa (Paschen minimum region). "
+            f"Vent below/above the band, re-attest, or type "
+            f"'{paschen_override_token(run_id)}' to override "
+            f"(logged with your name).")
+    else:
+        add('paschen', True,
+            'override ACCEPTED and logged' if inhibited else
+            f"attested pressure "
+            f"{'(none needed: mock)' if p_pa is None else f'{p_pa:g} Pa'}"
+            f' outside the inhibit band')
+
+    if mode == 'live':
+        add('energize_confirm', CONFIRM_ENERGIZE in confirmations,
+            f"type {CONFIRM_ENERGIZE} to arm: {vpk:g} kV peak on "
+            f"specimen {resolved['specimen_id']} (cap {cap_kv:g} kV), "
+            f"{resolved['planned_cycles']:,} planned cycles")
+    else:
+        add('energize_confirm', True, f'{mode}: HV never commanded')
+
+    return all(r.ok for r in results), results
+
+
+def _split(r):
+    return r.ok, r.detail
+
+
+def _trip_ua(resolved):
+    for rule in resolved['failure_rules']['fast']:
+        if rule['id'] == 'overcurrent':
+            return float(rule['threshold'])
+    return 100.0

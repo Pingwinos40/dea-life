@@ -1,0 +1,31 @@
+{
+  "schema": "sldea-lifecycle/1",
+  "name": "Shakedown (mock)",
+  "description": "Short end-to-end exercise for tests and demos: break-in, baseline, 3x(cycle+fast interlude), closing full interlude. Minutes on a real clock, instant on --sim-time.",
+  "geometry": "planar",
+  "drive": {"waveform": "SINE", "freq_hz": 5.0,
+            "v_pk": {"kv": 1.5}, "v_min_kv": 0.0},
+  "reference": {"ref_kv": 1.0, "ref_freq_hz": 0.1, "ref_cycles": 3,
+                "leak_hold_kv": 1.0, "leak_hold_s": 5.0},
+  "environment": {"t_c_band": [15, 30], "p_mbar_band": [900, 1100],
+                  "stale_after_s": 1800, "reattest_on_rearm": true},
+  "counting": "burst",
+  "camera_track_max_hz": 0.5,
+  "stop": {"max_cycles": 5000, "max_wall_h": 2},
+  "failure_rules": {},
+  "blocks": [
+    {"type": "cycle", "role": "break_in", "n_cycles": 200},
+    {"type": "full_interlude", "set_baseline": true,
+     "staircase": {"start_kv": 0.0, "end_kv": {"fraction_of_vpk": 0.8},
+                   "step_kv": 0.4, "ramp_s": 1.0, "landing_s": 3.0,
+                   "settle_s": 1.0, "snap_lead_s": 0.5}},
+    {"type": "loop", "repeat": 3, "blocks": [
+      {"type": "cycle", "n_cycles": 500},
+      {"type": "fast_interlude"}
+    ]},
+    {"type": "full_interlude",
+     "staircase": {"start_kv": 0.0, "end_kv": {"fraction_of_vpk": 0.8},
+                   "step_kv": 0.4, "ramp_s": 1.0, "landing_s": 3.0,
+                   "settle_s": 1.0, "snap_lead_s": 0.5}}
+  ]
+}

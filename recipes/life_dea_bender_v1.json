@@ -1,0 +1,35 @@
+{
+  "schema": "sldea-lifecycle/1",
+  "name": "LIFE-DEA bender v1",
+  "description": "Bender lifecycle at 1.75 kV-class drive (IROS campaign articles, 10x20 / 20x40 mm multilayer): 2 Hz cycling within the Trek current budget for nF-class stacks, fast interlude per 1e3 cycles, full per 2.5e4, 1e5-cycle cap (10x the 1e4 bench-claim gate). Side-view deflection via the bender vision pipeline.",
+  "geometry": "bender",
+  "drive": {"waveform": "SINE", "freq_hz": 2.0,
+            "v_pk": {"kv": 1.75}, "v_min_kv": 0.0},
+  "reference": {"ref_kv": 1.75, "ref_freq_hz": 0.1, "ref_cycles": 3,
+                "leak_hold_kv": 1.75, "leak_hold_s": 20.0},
+  "environment": {"t_c_band": [15, 30], "p_mbar_band": [900, 1100],
+                  "stale_after_s": 1800, "reattest_on_rearm": true},
+  "counting": "burst",
+  "camera_track_max_hz": 0.5,
+  "stop": {"max_cycles": 100000, "max_wall_h": 96},
+  "failure_rules": {},
+  "blocks": [
+    {"type": "wait_env",
+     "prompt": "Enter chamber T (C) and pressure (mbar) before break-in."},
+    {"type": "cycle", "role": "break_in", "n_cycles": 200},
+    {"type": "full_interlude", "set_baseline": true,
+     "staircase": {"start_kv": 0.0, "end_kv": {"fraction_of_vpk": 0.9},
+                   "step_kv": 0.25, "ramp_s": 2.0, "landing_s": 8.0,
+                   "settle_s": 2.0, "snap_lead_s": 1.0}},
+    {"type": "loop", "repeat": 4, "blocks": [
+      {"type": "loop", "repeat": 25, "blocks": [
+        {"type": "cycle", "n_cycles": 1000},
+        {"type": "fast_interlude"}
+      ]},
+      {"type": "full_interlude",
+       "staircase": {"start_kv": 0.0, "end_kv": {"fraction_of_vpk": 0.9},
+                     "step_kv": 0.25, "ramp_s": 2.0, "landing_s": 8.0,
+                     "settle_s": 2.0, "snap_lead_s": 1.0}}
+    ]}
+  ]
+}
