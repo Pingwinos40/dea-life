@@ -58,6 +58,14 @@ pass on the Linux bench.
   midpoint. See the plan's "Cycle accounting" traps and
   `bench/probe_burst_idle.py`.
 
+## Licensing
+
+The upstream Digital-Multitool repository carries no license file
+(all-rights-reserved by default). The copies in this directory are
+published under this repository's GPLv3 (see /LICENSE) by their
+copyright holder, who owns both projects. Re-vendoring from upstream
+does not change that grant.
+
 ## Rules
 
 - Never edit a `lib/` file without recording the delta in the table above.

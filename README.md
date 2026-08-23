@@ -1,4 +1,6 @@
-# SLDEA Lifecycle Manager
+# LIFE-DEA — SLDEA Lifecycle Manager
+
+**L**ifecycle **I**nterrogation for **F**light **E**nvironments — DEA.
 
 TL;DR: automated lifecycle / fatigue testing station for dielectric
 elastomer actuators (planar single-layer discs and cantilever benders)
@@ -70,3 +72,25 @@ call. HV is inhibited while attested chamber pressure is inside the
 Paschen band. Software zero is currently the only kill path — the Trek's
 remote-TTL hardware interlock is the first roadmap upgrade. Details and
 provenance: `docs/SAFETY.md`.
+
+## License
+
+Copyright (C) 2026 Anatol Gogoj.
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version. It is distributed in the hope that it will
+be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+[LICENSE](LICENSE) for the full text.
+
+The vendored `lib/` modules originate from the author's
+Digital-Multitool project and are published here under the same GPLv3
+terms by their copyright holder (see `lib/VENDOR.md`).
+
+**Safety disclaimer**: this software sequences high-voltage laboratory
+equipment. The NO WARRANTY terms above apply with full force to its
+safety features — gates, watchdogs, and interlocks are engineering
+aids, not a substitute for hardware interlocks, institutional HV
+procedures, or a present, trained operator.
