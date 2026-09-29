@@ -97,7 +97,6 @@ def test_caps_hierarchy_and_ceiling():
         reg.reload_caps()
         assert reg.cap_kv('B-1') == 1.9      # per-specimen wins
         assert reg.cap_kv('P-1') == 8.0      # ceiling clamps geometry
-        assert reg.paschen_band_pa() == (1.0, 10000.0)
 
 
 # ---- runstore ------------------------------------------------------------
@@ -168,12 +167,14 @@ def test_event_rows_numbered():
 
 # ---- safety --------------------------------------------------------------
 
-def test_paschen_inhibit_band():
-    band = (1.0, 10000.0)
-    assert safety.paschen_inhibited(None, band)       # no attestation
-    assert safety.paschen_inhibited(500.0, band)      # in band
-    assert not safety.paschen_inhibited(101300.0, band)
-    assert not safety.paschen_inhibited(0.5, band)    # hard vacuum
+def test_paschen_note_is_advisory_text():
+    # 2026-09-29: the band warns, it no longer inhibits HV
+    band = safety.DEFAULT_PASCHEN_BAND_PA
+    assert 'not evaluated' in safety.paschen_note(None, band)
+    note = safety.paschen_note(5000.0, band)          # 5 kPa, in band
+    assert 'Paschen band' in note and 'not blocked' in note
+    assert safety.paschen_note(101300.0, band) == ''  # ambient
+    assert safety.paschen_note(0.5, band) == ''       # hard vacuum
 
 
 def test_platform_gate():
@@ -183,10 +184,10 @@ def test_platform_gate():
     assert live.ok == _sys.platform.startswith('linux')
 
 
-def test_override_token_is_run_scoped():
-    t1 = safety.paschen_override_token('RUN_A')
-    t2 = safety.paschen_override_token('RUN_B')
-    assert t1 != t2 and 'RUN_A' in t1
+def test_paschen_override_is_gone():
+    # nothing to type any more: no token helper survives in safety
+    assert not hasattr(safety, 'paschen_override_token')
+    assert not hasattr(safety, 'paschen_inhibited')
 
 
 def _run():

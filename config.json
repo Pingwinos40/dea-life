@@ -16,8 +16,8 @@
 
   "camera_index": 0,
 
-  "paschen_block_pa": [1.0, 10000.0],
-  "_paschen_block_pa": "HV is inhibited while attested chamber pressure is inside this band [Pa]. PLACEHOLDER pending lab review -- covers the Paschen minimum region for mm-cm gaps with margin. Override requires typed confirmation and is logged.",
+  "paschen_warn_pa": [1.0, 10000.0],
+  "_paschen_warn_pa": "ADVISORY band [Pa]: an attested pressure inside it (the Paschen minimum region for mm-cm gaps, with margin) puts a warning on the pre-flight, run.log, setup.txt and events.csv. It never blocks HV (decision 2026-09-29, docs/MOTIVATION.md) -- encapsulate electrodes and check lead spacing.",
 
   "status_write_s": 2.0,
   "heartbeat_stale_s": 15.0

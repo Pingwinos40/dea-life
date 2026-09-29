@@ -39,14 +39,11 @@ CAPS_NAME = 'admin_caps.json'
 DEFAULT_CAPS = {
     '_comment': ("SAFETY FILE -- hard voltage caps, edited only by the "
                  "lab supervisor, never by the GUI. Per-specimen caps "
-                 "override _defaults by geometry. paschen_block_pa is "
-                 "the pressure band [Pa] in which HV is inhibited "
-                 "(PLACEHOLDER pending lab review). lab_ceiling_kv "
+                 "override _defaults by geometry. lab_ceiling_kv "
                  "bounds everything."),
     '_defaults': {'planar16': 10.0, 'bender_10x20': 2.5,
                   'bender_20x40': 2.5, 'custom': 2.0},
     'lab_ceiling_kv': 10.0,
-    'paschen_block_pa': [1.0, 10000.0],
     'specimens': {},
 }
 
@@ -209,11 +206,6 @@ class Registry:
         if geo is not None:
             return min(float(geo), ceiling)
         return ceiling
-
-    def paschen_band_pa(self):
-        band = self._caps.get('paschen_block_pa',
-                              DEFAULT_CAPS['paschen_block_pa'])
-        return (float(band[0]), float(band[1]))
 
     # ---- survival-analysis view ----------------------------------------
     def survival_rows(self):

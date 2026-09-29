@@ -17,6 +17,7 @@ from tkinter import messagebox, ttk
 from ui_widgets import add_tooltip  # vendored
 
 from core import runstore as _runstore
+from core import safety as _safety
 from core.registry import Registry
 
 from .campaign_screen import CampaignScreen
@@ -51,11 +52,10 @@ class AppState:
         return self._registry
 
     def paschen_band(self):
-        band = self.cfg.get('paschen_block_pa')
+        band = self.cfg.get('paschen_warn_pa')
         if band:
             return (float(band[0]), float(band[1]))
-        reg = self.registry()
-        return reg.paschen_band_pa() if reg else (1.0, 10000.0)
+        return _safety.DEFAULT_PASCHEN_BAND_PA
 
     def operator(self):
         return ((self.setup or {}).get('env') or {}).get('operator', '')

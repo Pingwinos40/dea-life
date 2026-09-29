@@ -27,7 +27,7 @@ state (vendored sldea_presets rule). `live` requires Linux
 | 4 | monitor windows: vendored `monitor_problems` vertical checks + NEW horizontal check (window ≥ 2 carrier periods) + one-click `monitor_fix_plan` | bench incident 2026-07-25 (CH2 at 2.6 mV/div passed silently for five runs); horizontal added for cycling drive |
 | 5 | feasibility: I_pk = 2πfCV + leakage margin vs Trek ±2 mA (warn ≥60%, refuse ≥90%), slew, large-signal BW | silent amp clipping invalidates week-long runs |
 | 6 | specimen hard cap (admin_caps.json): validated in the recipe AND clamped inside every `DriveSource` set | defense in depth; no GUI editor exists on purpose |
-| 7 | Paschen interlock: attested pressure inside the blocked band (default 1 Pa–10 kPa, **PLACEHOLDER pending lab review**) ⇒ HV refused; override only by typing `OVERRIDE PASCHEN <run_id>`, logged with the operator's name; attestations expire and re-attest is forced at every wait_env / HV re-arm | ECSS corona-sweep rationale: the Paschen minimum region is where mm-gap breakdown collapses; pump-down and vent both transit it |
+| 7 | Paschen **advisory**: attested pressure inside the band (config.json `paschen_warn_pa`, default 1 Pa–10 kPa) ⇒ the gate PASSES with a warning on the pre-flight (amber `!` row), in run.log, setup.txt (`--- Advisories ---`) and events.csv (`gate/paschen/warn`); re-evaluated after every mid-run wait_env attestation. No typed override exists — HV is never refused on pressure. | ECSS corona-sweep rationale: the Paschen minimum region is where mm-gap breakdown collapses. Until 2026-09-29 this inhibited HV; the author's decision that day (docs/MOTIVATION.md, roadmap 4) made it advisory: encapsulated specimens run at 4–5 kPa on purpose, and operators are never locked out of a pressure |
 | 8 | typed `ENERGIZE` confirm quoting resolved kV / cap / cycles | upstream Energize-HV modal, default no |
 | 9 | camera preflight (exposure_verdict + focus) | upstream _sldea_preflight |
 | 10 | watchdog baseline learn: 0.5 s settle, 10 reads, discard 2, median ≥ 4, `credible_baseline_ua` gate (a standing fault current must trip, not normalize) | gui.py:3804-3852, review 2026-08-04 |
@@ -82,9 +82,13 @@ state (vendored sldea_presets rule). `live` requires Linux
 1. No hardware interlock: software zero is the only kill (roadmap #1:
    Trek remote-TTL — open/high = OFF, inherently fail-safe — plus a
    heartbeat watchdog relay).
-2. Environment is ATTESTED, not measured, in v1 — the Paschen and
-   temperature-band gates are only as good as the operator's entry
-   (roadmap #2: dedicated sensors drop into `EnvironmentSource`).
-3. The Paschen band default has not been reviewed by the lab.
+2. Environment is ATTESTED, not measured, in v1 — the Paschen
+   advisory and the temperature-band gates are only as good as the
+   operator's entry (roadmap #2: dedicated sensors drop into
+   `EnvironmentSource`).
+3. Nothing stops HV at Paschen-minimum pressures (advisory only, by
+   decision). Exposed conductors, lead gaps and feedthroughs are the
+   operator's responsibility; the band default has not been reviewed
+   by the lab.
 4. Trek 610E-G limits assumed from the 610E datasheet (±2 mA,
    ~1.2 kHz); confirm the -G variant manual at Phase 5 bench time.

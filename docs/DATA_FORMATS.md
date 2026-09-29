@@ -92,7 +92,8 @@ loops. V/I stats are captured MID-burst (idle values would be lies).
     frame_file, operator
 
 Every rule firing, AMBER flag + acknowledgement, environment
-attestation, Paschen override, pause/resume, stop-cap, and typed
+attestation, Paschen advisory (`gate/paschen/warn`), pause/resume,
+stop-cap, and typed
 confirmation lands here. It is the audit log.
 
 ## checkpoint.json

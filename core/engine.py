@@ -36,7 +36,8 @@ CONTROL_JSON = 'control.json'
 class LifecycleEngine:
     def __init__(self, resolved, specimen_row, cap_kv, hal, run_dir,
                  clock, mode, log_sink=print, registry=None,
-                 confirmations=(), paschen_band_pa=(1.0, 10000.0),
+                 confirmations=(),
+                 paschen_band_pa=_safety.DEFAULT_PASCHEN_BAND_PA,
                  resume=False):
         self.resolved = resolved
         self.specimen_row = specimen_row
@@ -167,7 +168,7 @@ class LifecycleEngine:
             return self._finish(store, None, 'aborted')
 
         store.write_recipe(self.resolved)
-        store.write_setup(self._setup_lines(run_id))
+        store.write_setup(self._setup_lines(run_id, gates))
         self.runlog.attach(os.path.join(self.run_dir, 'run.log'))
 
         # ---- ARMED: capture the drive handle for the finally block
@@ -181,6 +182,7 @@ class LifecycleEngine:
                              log, self.status, self.resolved, self.mode,
                              self._process_commands)
         self.ctx = ctx
+        ctx.paschen_band_pa = self.paschen_band_pa
         if ck:
             ctx.wall_offset_s = ck['wall_s']
             ctx.baseline = ck.get('baseline')
@@ -188,6 +190,11 @@ class LifecycleEngine:
             ctx.interlude_idx = ck.get('interlude_rows', 0)
             store.set_event_idx(ck.get('event_rows', 0))
         start_idx = ck['flat_idx'] if ck else 0
+        # advisory gates (Paschen, 2026-09-29) passed but left a note:
+        # put it on the audit record, not just in run.log
+        for g in gates:
+            if g.warn:
+                ctx.event('gate', g.gate, 'warn', message=g.warn)
 
         if drive is not None:
             drive.specimen_cap_kv = self.cap_kv
@@ -388,7 +395,7 @@ class LifecycleEngine:
         self.state = 'DONE'
         return disposition
 
-    def _setup_lines(self, run_id):
+    def _setup_lines(self, run_id, gates=()):
         r = self.resolved
         drv = r['drive']
         feas = r.get('feasibility') or {}
@@ -427,6 +434,10 @@ class LifecycleEngine:
                 + ('(unknown C)' if ipk is None else f'{ipk:.0f} uA, '
                    f"{100 * (feas.get('i_frac') or 0):.0f}% of Trek "
                    f'limit'))
+        warns = [g for g in gates if g.warn]
+        if warns:
+            lines += ['', '--- Advisories ---']
+            lines += [f'{g.gate}: {g.warn}' for g in warns]
         lines += ['', '--- Recipe ---',
                   f"name: {r['name']}",
                   f"sha256: {r['sha256']}", '']

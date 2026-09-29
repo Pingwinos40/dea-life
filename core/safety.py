@@ -1,4 +1,4 @@
-"""Mode ladder, gate chain, Paschen interlock, typed confirmations.
+"""Mode ladder, gate chain, Paschen advisory, typed confirmations.
 
 Every gate carries its provenance -- the Digital Multitool incident or
 audit that forced it. The chain runs before ARMED; each gate returns a
@@ -21,16 +21,22 @@ CONFIRM_ENERGIZE = 'ENERGIZE'
 CONFIRM_BLIND = 'BLIND'                       # scope missing, run anyway
 
 
-def paschen_override_token(run_id):
-    return f'OVERRIDE PASCHEN {run_id}'
+# Paschen band [Pa] for the ADVISORY note (config.json paschen_warn_pa).
+# Until 2026-09-29 this band inhibited HV behind a typed override; the
+# author's decision that day (docs/MOTIVATION.md, roadmap item 4) made it
+# a warning: encapsulated specimens run at 4-5 kPa on purpose (the
+# stratosphere-paper vacuum condition sits inside this band), and an
+# operator is never locked out of a pressure.
+DEFAULT_PASCHEN_BAND_PA = (1.0, 10000.0)
 
 
 class GateResult:
-    def __init__(self, gate, ok, detail='', fix=None):
+    def __init__(self, gate, ok, detail='', fix=None, warn=''):
         self.gate = gate
         self.ok = ok
         self.detail = detail
         self.fix = fix                # optional callable: one-click fix
+        self.warn = warn              # advisory text; never blocks arming
 
     def __repr__(self):
         return f'GateResult({self.gate}, {"PASS" if self.ok else "FAIL"})'
@@ -49,18 +55,24 @@ def platform_ok(mode):
         f'use --mode mock or --mode dry here')
 
 
-def paschen_inhibited(p_pa, band_pa):
-    """True when HV must be inhibited at this attested pressure.
+def paschen_note(p_pa, band_pa):
+    """Advisory text for an attested pressure, or '' when there is
+    nothing to say. Never a reason to refuse HV (see
+    DEFAULT_PASCHEN_BAND_PA).
 
-    The band (default 1 Pa .. 10 kPa, admin_caps.json, PLACEHOLDER
-    pending lab review) covers the Paschen-minimum region where
-    breakdown voltage of mm-scale gaps collapses; pump-down and vent
-    both transit it. p_pa None (no attestation yet) counts as inhibited
-    -- no attestation, no HV."""
+    The band (default 1 Pa .. 10 kPa) covers the Paschen-minimum region
+    where the breakdown voltage of mm-scale gaps collapses; pump-down
+    and vent both transit it. Inside it, exposed conductors and lead
+    gaps can arc even when the encapsulated specimen is fine."""
     if p_pa is None:
-        return True
+        return 'no pressure attested -- Paschen advisory not evaluated'
     lo, hi = float(band_pa[0]), float(band_pa[1])
-    return lo <= float(p_pa) <= hi
+    if lo <= float(p_pa) <= hi:
+        return (f'attested pressure {float(p_pa):g} Pa is inside the '
+                f'Paschen band {lo:g}..{hi:g} Pa: exposed conductors and '
+                f'mm-scale gaps can arc here. Encapsulate electrodes and '
+                f'check lead spacing. Advisory only -- HV is not blocked.')
+    return ''
 
 
 def gate_chain(mode, hal, resolved, cap_kv, run_id, env_sample,
@@ -68,19 +80,21 @@ def gate_chain(mode, hal, resolved, cap_kv, run_id, env_sample,
     """Run every pre-arm gate; returns (all_ok, [GateResult]).
 
     `confirmations` is a set of typed tokens already collected by the
-    front end (CONFIRM_ENERGIZE, CONFIRM_BLIND, paschen override).
+    front end (CONFIRM_ENERGIZE, CONFIRM_BLIND).
     Ordering matters and is preserved from the proven chain
     (gui.py:3075-3230): platform -> drive present -> monitor present or
     typed BLIND -> monitor windows -> feasibility -> specimen cap ->
-    Paschen -> ENERGIZE. Camera preflight and the watchdog baseline
+    Paschen (advisory: always passes, may carry a warning) -> ENERGIZE.
+    Camera preflight and the watchdog baseline
     learn run AFTER arming, inside the executors, exactly as upstream.
     """
     results = []
 
-    def add(gate, ok, detail='', fix=None):
-        r = GateResult(gate, ok, detail, fix)
+    def add(gate, ok, detail='', fix=None, warn=''):
+        r = GateResult(gate, ok, detail, fix, warn)
         results.append(r)
         log(f"gate {gate}: {'PASS' if ok else 'FAIL'}"
+            + (' (WARNING)' if warn else '')
             + (f' -- {detail}' if detail else ''))
         return ok
 
@@ -131,23 +145,11 @@ def gate_chain(mode, hal, resolved, cap_kv, run_id, env_sample,
         f'drive {vpk:g} kV vs hard cap {cap_kv:g} kV (admin_caps.json)')
 
     p_pa = None if env_sample is None else env_sample.get('p_pa')
-    inhibited = paschen_inhibited(p_pa, paschen_band_pa)
-    overridden = paschen_override_token(run_id) in confirmations
-    if inhibited and not overridden:
-        add('paschen', False,
-            f"attested pressure "
-            f"{'(none)' if p_pa is None else f'{p_pa:g} Pa'} is inside "
-            f"the HV-inhibit band {paschen_band_pa[0]:g}.."
-            f"{paschen_band_pa[1]:g} Pa (Paschen minimum region). "
-            f"Vent below/above the band, re-attest, or type "
-            f"'{paschen_override_token(run_id)}' to override "
-            f"(logged with your name).")
-    else:
-        add('paschen', True,
-            'override ACCEPTED and logged' if inhibited else
-            f"attested pressure "
-            f"{'(none needed: mock)' if p_pa is None else f'{p_pa:g} Pa'}"
-            f' outside the inhibit band')
+    note = paschen_note(p_pa, paschen_band_pa)
+    add('paschen', True,
+        note or f'attested pressure {float(p_pa):g} Pa outside the '
+                f'Paschen band',
+        warn=note)
 
     if mode == 'live':
         add('energize_confirm', CONFIRM_ENERGIZE in confirmations,

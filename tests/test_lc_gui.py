@@ -76,6 +76,13 @@ def test_app_builds_and_flows():
                         for k, r in app.preflight.rows.items()}
             assert str(app.preflight.start_live_btn.cget('state')) \
                 == 'normal'
+            # 5 kPa sits in the Paschen band: WARN row, Start stays
+            # enabled (advisory since 2026-09-29)
+            app.state.setup['env']['p_mbar'] = 50.0
+            assert app.preflight.recheck()
+            assert app.preflight.rows['paschen'].state_name == 'WARN'
+            assert str(app.preflight.start_live_btn.cget('state')) \
+                == 'normal'
         finally:
             app.tk.destroy()
 
