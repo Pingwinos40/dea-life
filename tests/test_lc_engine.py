@@ -261,6 +261,49 @@ def test_paschen_band_warns_but_arms():
         assert '--- Advisories ---' in setup and 'paschen:' in setup
 
 
+def test_milestone_snapshots():
+    # 10^6 cap with milestone reports (2026-09-29). shakedown totals:
+    # 200, 700, 1200, 1700; each crossing waits for the fast interlude
+    # that follows, so the snapshot carries that characterization.
+    d = json.loads(json.dumps(RECIPE))
+    d['milestones'] = [500, 1000]
+    with tempfile.TemporaryDirectory() as tmp:
+        eng, run_dir, hal = _mk(tmp, recipe_dict=d)
+        assert eng.run() == 'complete'
+        ev = [e for e in _read_csv(run_dir, 'events.csv')
+              if e['rule_id'] == 'milestone']
+        got = [(e['action'], e['threshold'], e['value']) for e in ev]
+        assert got == [('log', '500', '700'), ('log', '1000', '1200')], ev
+        # baseline + one fast interlude per crossing block: a snapshot
+        # taken right after the cycle block would count one fewer
+        for m, n_inter in ((500, 2), (1000, 3)):
+            path = os.path.join(run_dir, f'report_milestone_{m:08d}.html')
+            html = open(path, encoding='utf-8').read()
+            assert 'MILESTONE SNAPSHOT' in html
+            assert f'| {n_inter} interludes |' in html, m
+
+
+def test_milestone_report_failure_never_stops_the_run():
+    import analysis.report_run as rr
+    d = json.loads(json.dumps(RECIPE))
+    d['milestones'] = [500]
+    real = rr.generate
+
+    def boom(*a, **k):
+        raise RuntimeError('disk full')
+    rr.generate = boom
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            eng, run_dir, hal = _mk(tmp, recipe_dict=d)
+            assert eng.run() == 'complete'
+            ev = [e for e in _read_csv(run_dir, 'events.csv')
+                  if e['rule_id'] == 'milestone']
+            assert ev and ev[0]['action'] == 'warn'
+            assert 'disk full' in ev[0]['message']
+    finally:
+        rr.generate = real
+
+
 def test_ambient_run_has_no_paschen_note():
     with tempfile.TemporaryDirectory() as tmp:
         eng, run_dir, hal = _mk(tmp)

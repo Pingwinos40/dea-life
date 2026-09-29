@@ -25,12 +25,23 @@ import queue
 from . import checkpoint as _checkpoint
 from . import cycles as _cycles
 from . import executors as _ex
+from . import feasibility as _feasibility
 from . import runstore as _runstore
 from . import safety as _safety
 from .failure import RuleEngine
 from .status import StatusWriter
 
 CONTROL_JSON = 'control.json'
+# Milestone snapshots (2026-09-29: 10^6 cap with milestone reports) fire
+# only after these blocks -- every one of them ends with the drive at
+# 0 kV -- and are held back while an interlude comes next, so the
+# snapshot carries the characterization taken at that count.
+_MILESTONE_AFTER = ('cycle', 'fast_interlude', 'full_interlude')
+_INTERLUDES = ('fast_interlude', 'full_interlude')
+
+
+def milestone_report_name(m):
+    return f'report_milestone_{int(m):08d}.html'
 
 
 class LifecycleEngine:
@@ -130,7 +141,7 @@ class LifecycleEngine:
         log = self.runlog.log
         self.state = 'VALIDATE'
         run_id = os.path.basename(self.run_dir)
-        log(f'== SLDEA Lifecycle run {run_id} '
+        log(f'== DEA-LIFE run {run_id} '
             f'({self.mode.upper()}) ==')
 
         store = _runstore.RunStore(self.run_dir, resume=self.resume)
@@ -262,6 +273,11 @@ class LifecycleEngine:
                             force=True)
                         self._dispatch(ctx, block, idx)
                         self._checkpoint(ctx, idx + 1)
+                        nxt = (blocks[idx + 1]['type'] if idx + 1 < n
+                               else None)
+                        if (block['type'] in _MILESTONE_AFTER
+                                and nxt not in _INTERLUDES):
+                            self._fire_milestones(ctx)
                 except _ex.HardTrip as e:
                     disposition = 'failed'
                     failure_mode = e.firing.rule_id
@@ -295,6 +311,34 @@ class LifecycleEngine:
                             zeroed=zeroed)
 
     # ---- helpers --------------------------------------------------------
+    def _fire_milestones(self, ctx):
+        """Snapshot report for every milestone the ledger has passed and
+        that has no report yet (a file on disk = done, so a resumed run
+        never repeats one). Runs in-process at a 0 kV block boundary so
+        the CSVs are consistent; a report failure is a logged warning,
+        never a reason to stop the run. A milestone reached by the block
+        that ends the run is covered by the final report instead."""
+        for m in self.resolved.get('milestones') or []:
+            if ctx.ledger.cycles < m:
+                break
+            name = milestone_report_name(m)
+            if os.path.exists(os.path.join(self.run_dir, name)):
+                continue
+            ctx.push_status(state='RUNNING', force=True)
+            try:
+                from analysis.report_run import generate
+                generate(self.run_dir, out_name=name, milestone=m)
+                ctx.event('engine', 'milestone', 'log',
+                          value=ctx.ledger.cycles, threshold=m,
+                          message=f'milestone {m:,} cycles reached -- '
+                                  f'snapshot {name}')
+            except Exception as e:
+                ctx.event('engine', 'milestone', 'warn',
+                          value=ctx.ledger.cycles, threshold=m,
+                          message=f'milestone {m:,} snapshot report '
+                                  f'failed ({type(e).__name__}: {e}); '
+                                  f'run continues')
+
     def _dispatch(self, ctx, block, idx):
         btype = block['type']
         if btype == 'cycle':
@@ -400,7 +444,7 @@ class LifecycleEngine:
         drv = r['drive']
         feas = r.get('feasibility') or {}
         lines = [
-            f'SLDEA Lifecycle Run  --  {run_id}',
+            f'DEA-LIFE Run  --  {run_id}',
             f'Started: {self.clock.now_iso(timespec="seconds")}',
             'MODE: *** DRY RUN (HV never commanded) ***'
             if self.mode == 'dry' else
@@ -428,12 +472,8 @@ class LifecycleEngine:
             f"{r['stop']['max_wall_h']:g} h",
         ]
         if feas:
-            ipk = feas.get('i_pk_ua')
-            lines.append(
-                f"feasibility: {feas['verdict']} -- I_pk "
-                + ('(unknown C)' if ipk is None else f'{ipk:.0f} uA, '
-                   f"{100 * (feas.get('i_frac') or 0):.0f}% of Trek "
-                   f'limit'))
+            lines.append(f"feasibility: {feas['verdict']} -- "
+                         f"{_feasibility.summary(feas)}")
         warns = [g for g in gates if g.warn]
         if warns:
             lines += ['', '--- Advisories ---']

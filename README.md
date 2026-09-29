@@ -1,6 +1,7 @@
-# LIFE-DEA — SLDEA Lifecycle Manager
+# DEA-LIFE — DEA lifecycle / fatigue station
 
-**L**ifecycle **I**nterrogation for **F**light **E**nvironments — DEA.
+**DEA** **L**ifecycle **I**nterrogation for **F**light **E**nvironments.
+(Named LIFE-DEA until 2026-09-29.)
 
 TL;DR: automated lifecycle / fatigue testing station for dielectric
 elastomer actuators (planar single-layer discs and cantilever benders)
@@ -52,8 +53,8 @@ folder (read-only by design — stopping HV requires bench presence).
 - `analysis/` — trend reduction, Weibull (censoring-correct), report
   generator, compliance matrix, figure export
 - `gui/` — Tkinter app (Setup · Pre-flight · Run · Review · Campaign)
-- `recipes/` — test templates; flagship: **LIFE-DEA** (Lifecycle
-  Interrogation for Flight Environments — DEA)
+- `recipes/` — test templates; flagship: the **DEA-LIFE** bender
+  protocol (`dea_life_bender_v1.json`)
 - `lib/` — vendored Digital Multitool modules (`lib/VENDOR.md`)
 - `tests/` — headless suites (`python run_tests.py`); `bench/` —
   hardware-in-the-loop probes (see `BENCH_TEST.md`)

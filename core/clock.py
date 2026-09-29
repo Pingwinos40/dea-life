@@ -1,7 +1,7 @@
 """Time source for the engine: real for the bench, simulated for tests.
 
 Everything in core/ that waits or timestamps goes through one of these,
-never through ``time`` directly, so a full multi-day LIFE-DEA recipe can
+never through ``time`` directly, so a full multi-day DEA-LIFE recipe can
 run in a test suite in well under a second (SimClock) while the same
 code path drives real hardware (Clock). The vendored TelemetryLog takes
 ``clock=`` (a monotonic callable) and composes with both.

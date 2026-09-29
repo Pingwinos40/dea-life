@@ -27,7 +27,7 @@ from . import feasibility as _feasibility
 
 import sldea_profile  # vendored (lib/ on sys.path via core.__init__)
 
-SCHEMA = 'sldea-lifecycle/1'
+SCHEMA = 'dea-life/1'
 MAX_FREQ_HZ = 10.0        # v1 ceiling (user decision 2026-08-23): the
                           # camera tracks motion directly; no strobe.
 WAVEFORMS = ('SINE', 'SQUARE', 'RAMP')
@@ -38,7 +38,8 @@ BLOCK_TYPES = ('cycle', 'fast_interlude', 'full_interlude', 'dc_hold',
 
 _TOP_KEYS = {'schema', 'name', 'description', 'geometry', 'drive',
              'reference', 'environment', 'counting',
-             'camera_track_max_hz', 'stop', 'failure_rules', 'blocks'}
+             'camera_track_max_hz', 'stop', 'milestones',
+             'failure_rules', 'blocks'}
 _DRIVE_KEYS = {'waveform', 'freq_hz', 'v_pk', 'v_min_kv'}
 _REF_KEYS = {'ref_kv', 'ref_freq_hz', 'ref_cycles', 'leak_hold_kv',
              'leak_hold_s'}
@@ -190,6 +191,8 @@ class Recipe:
                                lo=0.001, required=True)
         if self.max_cycles is not None:
             self.max_cycles = int(self.max_cycles)
+        self.milestones = self._parse_milestones(d.get('milestones', []),
+                                                 probs)
 
         rules = d.get('failure_rules', {})
         probs.extend(_failure.validate_rules(rules))
@@ -202,6 +205,31 @@ class Recipe:
         self.blocks = [self._parse_block(b, f'blocks[{i}]', probs, depth=0)
                        for i, b in enumerate(blocks)]
         self._check_structure(probs)
+
+    def _parse_milestones(self, ms, probs):
+        """Cycle counts that get a mid-run snapshot report (2026-09-29:
+        10^6 cap with milestone reports). Strictly increasing positive
+        integers, each reachable under stop.max_cycles."""
+        if not isinstance(ms, list):
+            probs.append("'milestones' must be a list of cycle counts")
+            return []
+        out = []
+        for i, m in enumerate(ms):
+            if (isinstance(m, bool) or not isinstance(m, (int, float))
+                    or m < 1 or int(m) != m):
+                probs.append(f'milestones[{i}]: {m!r} is not a positive '
+                             f'integer cycle count')
+                return []
+            out.append(int(m))
+        if out != sorted(set(out)):
+            probs.append('milestones must be strictly increasing')
+            return []
+        if (self.max_cycles is not None and out
+                and out[-1] >= self.max_cycles):
+            probs.append(f'milestones[-1] {out[-1]:,} must be below '
+                         f'stop.max_cycles {self.max_cycles:,} (the '
+                         f'final report covers the cap)')
+        return out
 
     def _parse_vpk(self, spec, probs):
         if isinstance(spec, dict) and set(spec) == {'kv'}:
@@ -435,7 +463,7 @@ def resolve(recipe, specimen_row, cap_kv, c_est_nf=None):
     feas = None
     if v_pk is not None:
         feas = _feasibility.check_drive(recipe.freq_hz, c_est_nf, v_pk,
-                                        v_min)
+                                        v_min, waveform=recipe.waveform)
         if feas['verdict'] == 'refuse':
             probs.extend('feasibility: ' + m for m in feas['msgs'])
 
@@ -458,6 +486,7 @@ def resolve(recipe, specimen_row, cap_kv, c_est_nf=None):
         'camera_track_max_hz': recipe.camera_track_max_hz,
         'stop': {'max_cycles': recipe.max_cycles,
                  'max_wall_h': recipe.max_wall_h},
+        'milestones': list(recipe.milestones),
         'failure_rules': _failure.merge_rules(
             recipe.failure_rules_overrides),
         'feasibility': feas,

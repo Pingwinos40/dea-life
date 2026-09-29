@@ -16,7 +16,7 @@ import json
 import os
 
 CHECKPOINT_NAME = 'checkpoint.json'
-SCHEMA = 'sldea-lifecycle-checkpoint/1'
+SCHEMA = 'dea-life-checkpoint/1'
 
 
 def save(run_dir, state):

@@ -15,7 +15,7 @@ for p in (_root, _os.path.join(_root, 'lib')):
 from core.recipe import Recipe, RecipeError, resolve, recipe_hash
 
 GOOD = {
-    'schema': 'sldea-lifecycle/1',
+    'schema': 'dea-life/1',
     'name': 'T',
     'geometry': 'planar',
     'drive': {'waveform': 'SINE', 'freq_hz': 5.0, 'v_pk': {'kv': 1.5},
@@ -168,6 +168,46 @@ def test_hash_stable_and_sensitive():
     c = resolve(Recipe.from_dict(d), SPECIMEN, cap_kv=10.0, c_est_nf=5.0)
     assert c['sha256'] != a['sha256']
     assert recipe_hash(a) == a['sha256']
+
+
+def test_milestones_validated():
+    d = copy.deepcopy(GOOD)
+    d['milestones'] = [1000, 5000]
+    assert Recipe.from_dict(d).milestones == [1000, 5000]
+    assert Recipe.from_dict(GOOD).milestones == []
+    _bad(lambda d: d.update(milestones=[5000, 1000]), 'strictly increasing')
+    _bad(lambda d: d.update(milestones=[0]), 'positive integer')
+    _bad(lambda d: d.update(milestones=[1.5]), 'positive integer')
+    _bad(lambda d: d.update(milestones=[10000]), 'below stop.max_cycles')
+    _bad(lambda d: d.update(milestones=1000), 'must be a list')
+
+
+def test_milestones_resolve_and_hash():
+    d = copy.deepcopy(GOOD)
+    d['milestones'] = [1000]
+    r1 = resolve(Recipe.from_dict(d), SPECIMEN, cap_kv=10.0, c_est_nf=5.0)
+    assert r1['milestones'] == [1000]
+    r0 = resolve(Recipe.from_dict(GOOD), SPECIMEN, cap_kv=10.0,
+                 c_est_nf=5.0)
+    assert r0['sha256'] != r1['sha256']
+
+
+def test_bender_flagship_template():
+    # author decisions 2026-09-29 (docs/MOTIVATION.md, roadmap 5)
+    rec = Recipe.load(_os.path.join(_root, 'recipes',
+                                    'dea_life_bender_v1.json'))
+    assert (rec.waveform, rec.freq_hz) == ('SQUARE', 0.25)
+    assert rec.v_pk_spec == {'kv': 2.0}
+    assert rec.max_cycles == 1000000
+    assert rec.milestones == [1000, 10000, 100000]
+    assert rec.planned_cycles() >= rec.max_cycles
+    # 1e6 cycles at 0.25 Hz is ~1111 h: the wall cap must not end the
+    # run first
+    assert rec.max_wall_h * 3600 > rec.max_cycles / rec.freq_hz
+    row = {'specimen_id': 'B1', 'geometry': 'bender_20x80'}
+    res = resolve(rec, row, cap_kv=2.5, c_est_nf=10.0)
+    assert res['feasibility']['verdict'] == 'ok', res['feasibility']
+    assert res['feasibility']['waveform'] == 'SQUARE'
 
 
 def test_all_problems_reported_together():

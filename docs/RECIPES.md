@@ -10,7 +10,7 @@ twice: statically at load, and resolved against the specimen registry
 
 ```json
 {
-  "schema": "sldea-lifecycle/1",
+  "schema": "dea-life/1",
   "name": "...", "description": "...",
   "geometry": "planar | bender",
   "drive": {"waveform": "SINE|SQUARE|RAMP", "freq_hz": 5.0,
@@ -24,6 +24,7 @@ twice: statically at load, and resolved against the specimen registry
   "counting": "burst | timed",
   "camera_track_max_hz": 0.5,
   "stop": {"max_cycles": 1000000, "max_wall_h": 168},
+  "milestones": [1000, 10000, 100000],
   "failure_rules": { ...overrides, merged by rule id... },
   "blocks": [ ... ]
 }
@@ -38,6 +39,18 @@ twice: statically at load, and resolved against the specimen registry
   tracks motion directly; no strobe hardware).
 - The `reference` condition is FIXED and cycling-independent so trends
   compare across specimens and conditions (the NERD-pattern rule).
+- `milestones` (optional, default none): strictly increasing cycle
+  counts below `stop.max_cycles`. Each one reached writes a mid-run
+  snapshot `report_milestone_NNNNNNNN.html` plus an events.csv row. The
+  engine fires it at a 0 kV block boundary, held back while an
+  interlude comes next so the snapshot carries that characterization;
+  a report failure is a logged warning and the run continues. A
+  milestone reached by the block that ends the run is covered by the
+  final report.
+- Feasibility is waveform-aware. SINE/RAMP: I_pk = 2πfCV vs the Trek
+  ±2 mA (warn ≥ 60%, refuse ≥ 90%). SQUARE: the Trek runs at its limit
+  on every edge by design, so the check is edge time C·ΔV / I vs the
+  half-period (warn ≥ 5%, refuse ≥ 25%).
 
 ## Blocks
 
@@ -77,14 +90,19 @@ precursor ordering is itself the scientific result).
 
 ## Shipped templates
 
-- `life_dea_planar_v1.json` — the flagship **LIFE-DEA** protocol
-  (**L**ifecycle **I**nterrogation for **F**light **E**nvironments —
-  DEA; stratosphere-paper lineage): 50% of median E_BD, fast interlude
-  per 10³ cycles, full per 5×10⁴, 10⁶-cycle cap. A specimen reaching the
-  cap is a SUSPENSION (right-censored) — the claim reads "N cycles
-  without dielectric breakdown".
-- `life_dea_bender_v1.json` — bender variant at 1.75 kV / 2 Hz
-  (within the Trek current budget for nF-class stacks), 10⁵ cap.
+- `dea_life_bender_v1.json` — the flagship **DEA-LIFE** protocol
+  (**DEA** **L**ifecycle **I**nterrogation for **F**light
+  **E**nvironments) for multilayer benders (20×40 / 20×80 mm): 2 s on / 2 s off
+  square wave (0.25 Hz) at 2.0 kV, fast interlude per 10³ cycles, full
+  per 2.5×10⁴, milestone snapshots at 10³ / 10⁴ / 10⁵, 10⁶-cycle cap
+  (author decisions 2026-09-29, docs/MOTIVATION.md). At 0.25 Hz the cap
+  is ~46 days of cycling (MOTIVATION open question 1). A specimen
+  reaching the cap is a SUSPENSION (right-censored) — the claim reads
+  "N cycles without dielectric breakdown".
+- `dea_life_planar_v1.json` — single-layer disc protocol
+  (stratosphere-paper lineage): 50% of median E_BD at the test
+  temperature, 5 Hz sine, fast interlude per 10³ cycles, full per
+  5×10⁴, milestone snapshots at 10³ / 10⁴ / 10⁵, 10⁶-cycle cap.
 - `shakedown_mock.json` — minutes-long end-to-end exercise; the test
   suite and the GUI rehearsal button run it on simulated time.
 

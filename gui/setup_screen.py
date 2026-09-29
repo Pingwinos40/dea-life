@@ -270,18 +270,14 @@ class SetupScreen(tk.Frame):
             pass
         freq = drive.get('freq_hz', 0)
         if kv and freq:
-            rep = _feasibility.check_drive(freq, c_est, kv)
+            rep = _feasibility.check_drive(
+                freq, c_est, kv, waveform=drive.get('waveform', 'SINE'))
             v = rep['verdict'].upper()
             color = {'OK': COLORS['good'], 'WARN': COLORS['amber_fg'],
                      'REFUSE': COLORS['red_fg']}.get(v, '#555')
-            ipk = rep['i_pk_ua']
-            txt = (f"{v}\n"
-                   + (f"I_pk {ipk:.0f} uA "
-                      f"({100 * (rep['i_frac'] or 0):.0f}% of Trek "
-                      f"+/-2 mA)\n" if ipk is not None else
-                      'C unknown -- record c_est_nf\n')
+            txt = (f"{v}\n{_feasibility.summary(rep)}\n"
                    + (f"max feasible f: "
-                      f"{rep['max_feasible_hz']:.1f} Hz\n"
+                      f"{rep['max_feasible_hz']:.2f} Hz\n"
                       if rep['max_feasible_hz'] else '')
                    + '\n'.join(rep['msgs']))
             self.feas_lbl.config(text=txt, fg=color)

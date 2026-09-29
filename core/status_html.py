@@ -86,7 +86,7 @@ def render(state, spark):
     return f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <meta http-equiv="refresh" content="60">
-<title>{_esc(state.get('run_id', 'SLDEA run'))}</title>
+<title>{_esc(state.get('run_id', 'DEA-LIFE run'))}</title>
 <style>
  body {{ font-family: system-ui, sans-serif; margin: 1.2em; color: #222;
         background: #fafafa; max-width: 720px; }}
