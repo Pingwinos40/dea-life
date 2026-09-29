@@ -1,4 +1,4 @@
-# SLDEA Lifecycle Manager -- Python 3.10+
+# DEA-LIFE -- Python 3.10+
 # Core (all platforms; mock/dry modes + analysis + GUI)
 numpy>=1.24
 opencv-python-headless>=4.7      # 4.7+: cv2.aruco lives in the main package

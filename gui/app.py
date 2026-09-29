@@ -111,7 +111,7 @@ class LifecycleApp:
             os.path.dirname(os.path.abspath(__file__)))
         self.cfg = cfg if cfg is not None else self._load_cfg()
         self.tk = tk.Tk()
-        self.tk.title('SLDEA Lifecycle Manager')
+        self.tk.title('DEA-LIFE')
         self.tk.geometry('1280x820')
         self.state = AppState(self.root_dir, self.cfg, self)
         self._build()
@@ -126,7 +126,7 @@ class LifecycleApp:
     def _build(self):
         bar = tk.Frame(self.tk, bg='#f0f0f0')
         bar.pack(fill='x')
-        tk.Label(bar, text='SLDEA Lifecycle Manager',
+        tk.Label(bar, text='DEA-LIFE',
                  font=('TkDefaultFont', 12, 'bold'),
                  fg=COLORS['ink'], bg='#f0f0f0').pack(side='left',
                                                       padx=8, pady=4)

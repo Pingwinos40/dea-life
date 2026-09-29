@@ -58,7 +58,7 @@ class RunStoreError(Exception):
 
 
 def default_data_root():
-    return os.path.join(os.path.expanduser('~'), 'sldea-runs')
+    return os.path.join(os.path.expanduser('~'), 'dea-life-runs')
 
 
 def check_data_root(data_root):

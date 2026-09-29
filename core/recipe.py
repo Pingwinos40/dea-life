@@ -27,7 +27,7 @@ from . import feasibility as _feasibility
 
 import sldea_profile  # vendored (lib/ on sys.path via core.__init__)
 
-SCHEMA = 'sldea-lifecycle/1'
+SCHEMA = 'dea-life/1'
 MAX_FREQ_HZ = 10.0        # v1 ceiling (user decision 2026-08-23): the
                           # camera tracks motion directly; no strobe.
 WAVEFORMS = ('SINE', 'SQUARE', 'RAMP')

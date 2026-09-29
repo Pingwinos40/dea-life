@@ -17,16 +17,16 @@ import os
 # Per-user, always-local landing zone used when the share is unreachable.
 # Module-level so tests can point it at a temp dir.
 # VENDOR DELTA (the only one in lib/): appname 'scpi_control' ->
-# 'sldea_lifecycle' so this app's local fallbacks never collide with the
+# 'dea_life' so this app's local fallbacks never collide with the
 # Digital Multitool's. See lib/VENDOR.md.
 LOCAL_FALLBACK = os.path.join(os.path.expanduser('~'), '.local', 'share',
-                              'sldea_lifecycle', 'presets')
+                              'dea_life', 'presets')
 # Second-chance fallback: the root-run desktop installer left
 # ~/.local/share/scpi_control root-owned in one user's home (same failure
 # the camera settings hit, webcam.py 2026-07-24). ~/.cache/<appname> is
 # created BY the user at every launch, so it is always writable.
 LOCAL_FALLBACK2 = os.path.join(os.path.expanduser('~'), '.cache',
-                               'sldea_lifecycle', 'presets')
+                               'dea_life', 'presets')
 
 _note = None          # human-readable description of the last fallback
 

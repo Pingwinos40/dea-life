@@ -1,7 +1,7 @@
 {
-  "schema": "sldea-lifecycle/1",
-  "name": "LIFE-DEA bender v1",
-  "description": "FLAGSHIP. LIFE-DEA (Lifecycle Interrogation for Flight Environments) bender protocol: multilayer benders (20x40 / 20x80 mm, usually encapsulated) cycled with a 2 s on / 2 s off square wave (0.25 Hz) at 2.0 kV (author decisions 2026-09-29, docs/MOTIVATION.md), fast interlude per 1e3 cycles, full staircase interlude per 2.5e4, milestone snapshot reports at 1e3 / 1e4 / 1e5, 1e6-cycle cap. At 0.25 Hz the cap is ~46 days of cycling. A specimen reaching the cap is a SUSPENSION (right-censored). Side-view deflection via the bender vision pipeline.",
+  "schema": "dea-life/1",
+  "name": "DEA-LIFE bender v1",
+  "description": "FLAGSHIP. DEA-LIFE (DEA Lifecycle Interrogation for Flight Environments) bender protocol: multilayer benders (20x40 / 20x80 mm, usually encapsulated) cycled with a 2 s on / 2 s off square wave (0.25 Hz) at 2.0 kV (author decisions 2026-09-29, docs/MOTIVATION.md), fast interlude per 1e3 cycles, full staircase interlude per 2.5e4, milestone snapshot reports at 1e3 / 1e4 / 1e5, 1e6-cycle cap. At 0.25 Hz the cap is ~46 days of cycling. A specimen reaching the cap is a SUSPENSION (right-censored). Side-view deflection via the bender vision pipeline.",
   "geometry": "bender",
   "drive": {"waveform": "SQUARE", "freq_hz": 0.25,
             "v_pk": {"kv": 2.0}, "v_min_kv": 0.0},

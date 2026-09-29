@@ -1,4 +1,4 @@
-# CLAUDE.md — SLDEA Lifecycle Manager working conventions
+# CLAUDE.md — DEA-LIFE working conventions
 
 TL;DR-first changelogs. Bench truth beats datasheet truth. Nothing that
 touches an HV path ships without the matching gate/test. Run data never

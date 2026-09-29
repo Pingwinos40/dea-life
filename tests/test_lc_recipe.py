@@ -15,7 +15,7 @@ for p in (_root, _os.path.join(_root, 'lib')):
 from core.recipe import Recipe, RecipeError, resolve, recipe_hash
 
 GOOD = {
-    'schema': 'sldea-lifecycle/1',
+    'schema': 'dea-life/1',
     'name': 'T',
     'geometry': 'planar',
     'drive': {'waveform': 'SINE', 'freq_hz': 5.0, 'v_pk': {'kv': 1.5},
@@ -195,7 +195,7 @@ def test_milestones_resolve_and_hash():
 def test_bender_flagship_template():
     # author decisions 2026-09-29 (docs/MOTIVATION.md, roadmap 5)
     rec = Recipe.load(_os.path.join(_root, 'recipes',
-                                    'life_dea_bender_v1.json'))
+                                    'dea_life_bender_v1.json'))
     assert (rec.waveform, rec.freq_hz) == ('SQUARE', 0.25)
     assert rec.v_pk_spec == {'kv': 2.0}
     assert rec.max_cycles == 1000000
