@@ -6,7 +6,10 @@ enters the repo.
 
 ## Doc map
 
-- Plan of record: `~/.claude/plans/using-plan-let-s-plan-calm-glacier.md`
+- `docs/MOTIVATION.md` — plan of record: the why, scope, dated
+  decisions, open questions, and the numbered roadmap that code
+  comments cite ("roadmap item N"). Replaces the off-repo
+  calm-glacier plan (outdated as of 2026-09-29).
 - `lib/VENDOR.md` — vendored-file provenance; the ONLY place lib/ deltas
   are recorded
 - `docs/SAFETY.md` — every gate and kill path, with provenance
