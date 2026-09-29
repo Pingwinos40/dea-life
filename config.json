@@ -1,9 +1,9 @@
 {
-  "schema": "sldea-lifecycle-config/1",
+  "schema": "dea-life-config/1",
   "_comment": "Station configuration. Values are raw strings/numbers; safety-critical caps live in admin_caps.json under data_root, NOT here.",
 
   "data_root": "",
-  "_data_root": "Where runs + specimen registry live. Empty = <home>/sldea-runs. NEVER a OneDrive-synced path (runstore refuses).",
+  "_data_root": "Where runs + specimen registry live. Empty = <home>/dea-life-runs. NEVER a OneDrive-synced path (runstore refuses).",
 
   "sg_resource": "",
   "_sg_resource": "BK4055B VISA resource. Empty = USB autodetect. LAN example: TCPIP0::192.168.71.230::INSTR (env SCPI_SG_LAN also honored).",

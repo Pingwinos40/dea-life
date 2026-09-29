@@ -1,7 +1,7 @@
 {
-  "schema": "sldea-lifecycle/1",
-  "name": "LIFE-DEA planar v1",
-  "description": "LIFE-DEA: Lifecycle Interrogation for Flight Environments (stratosphere-paper lineage). Drive at 50% of the specimen's median breakdown field for the test temperature, fast interlude every 1e3 cycles, full staircase interlude every 5e4, milestone snapshot reports at 1e3 / 1e4 / 1e5, run to failure / no-strain / 1e6-cycle cap. A specimen reaching the cap is a SUSPENSION (right-censored). Claim gate format: 'N cycles without dielectric breakdown'.",
+  "schema": "dea-life/1",
+  "name": "DEA-LIFE planar v1",
+  "description": "DEA-LIFE: DEA Lifecycle Interrogation for Flight Environments (stratosphere-paper lineage). Drive at 50% of the specimen's median breakdown field for the test temperature, fast interlude every 1e3 cycles, full staircase interlude every 5e4, milestone snapshot reports at 1e3 / 1e4 / 1e5, run to failure / no-strain / 1e6-cycle cap. A specimen reaching the cap is a SUSPENSION (right-censored). Claim gate format: 'N cycles without dielectric breakdown'.",
   "geometry": "planar",
   "drive": {"waveform": "SINE", "freq_hz": 5.0,
             "v_pk": {"fraction_of_breakdown": 0.5, "temp_c": 23},

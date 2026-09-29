@@ -1,5 +1,5 @@
 {
-  "schema": "sldea-lifecycle/1",
+  "schema": "dea-life/1",
   "name": "Shakedown (mock)",
   "description": "Short end-to-end exercise for tests and demos: break-in, baseline, 3x(cycle+fast interlude), closing full interlude. Minutes on a real clock, instant on --sim-time.",
   "geometry": "planar",

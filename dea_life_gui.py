@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""SLDEA Lifecycle Manager -- GUI launcher.
+"""DEA-LIFE -- GUI launcher.
 
-    python sldea_lifecycle_gui.py
+    python dea_life_gui.py
 
 The GUI is a launcher + monitor; the run itself is a detached
 lifecycle_cli.py process that survives a GUI crash. See README.md.

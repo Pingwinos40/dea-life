@@ -36,7 +36,7 @@ its probe.
 
 ## §R — dry rehearsal on hardware
 
-- [ ] Full LIFE-DEA recipe in `--mode dry` on the bench: sequencing,
+- [ ] Full DEA-LIFE recipe in `--mode dry` on the bench: sequencing,
       camera captures, scope reads, CSV/status writes all real; SG never
       commanded (verify with scope on SG output the whole run)
 
@@ -48,7 +48,7 @@ its probe.
 
 ## §T — sacrificial disc end-to-end
 
-- [ ] Short LIFE-DEA variant (≤ 30 min) on a sacrificial planar disc:
+- [ ] Short DEA-LIFE variant (≤ 30 min) on a sacrificial planar disc:
       break-in, baseline interlude, cycle blocks, fast interludes, clean
       completion, report generated
 - [ ] Deliberate mid-run kill -9 → resume with RECHAR pass → run

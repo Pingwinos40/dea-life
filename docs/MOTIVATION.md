@@ -1,6 +1,6 @@
-# MOTIVATION.md — why LIFE-DEA exists and what it must deliver
+# MOTIVATION.md — why DEA-LIFE exists and what it must deliver
 
-TL;DR: LIFE-DEA builds the survival dataset for our multilayer DEA
+TL;DR: DEA-LIFE builds the survival dataset for our multilayer DEA
 benders: how many cycles, and how many actuated seconds, a bender lasts
 in each environment it would meet in flight (hot, cold, vacuum,
 radiation). It does that two ways: a set-and-forget Trek station on the
@@ -28,7 +28,7 @@ questions).
 Robotic Demonstration in the Stratosphere", arXiv:2603.04352 (2026).
 Introduced the UV-curable resilient silicone (UV-RSE) and compared it
 against CN9018 (acrylic) and Dragonskin-20. The cycle-life protocol
-LIFE-DEA automates comes from here: 10 single-layer devices per
+DEA-LIFE automates comes from here: 10 single-layer devices per
 material per temperature, driven at 50% of that material's median
 breakdown field at that temperature, strain measured every 10³ cycles,
 stopped at no measurable strain, breakdown, or 10⁴ cycles. Conditions:
@@ -50,7 +50,7 @@ were lost because they lived in volatile memory.
 
 ## What those campaigns taught the tool
 
-| lesson | where it shows up in LIFE-DEA |
+| lesson | where it shows up in DEA-LIFE |
 |---|---|
 | RINSC drive logs were lost in volatile memory | append-only utf-8-sig CSVs, atomic JSON, checkpoint + resume (docs/DATA_FORMATS.md) |
 | the drive electronics died before the actuator did, and nothing told the two apart | drive is measured, not assumed: Trek V/I monitors on the scope, drive-fidelity rule, NOT_ZEROED state |
@@ -84,6 +84,7 @@ were lost because they lived in volatile memory.
 
 | topic | decision | consequence for the tool |
 |---|---|---|
+| name | DEA-LIFE (was LIFE-DEA): **DEA** **L**ifecycle **I**nterrogation for **F**light **E**nvironments | repo, recipes, schema ids (`dea-life/1`), data root (`~/dea-life-runs`) and launcher (`dea_life_gui.py`) renamed while no run data existed; vendored upstream modules keep their `sldea_*` names |
 | audience | the author's thesis first | data provenance and analysis must survive thesis-committee scrutiny |
 | qualification | aim at real flight qualification; that is what carries over to the space economy | NASA-STD-5017 / ECSS life factors and the standards-pack templates are real roadmap items, not decoration |
 | distribution | open source (GPLv3); single-lab use for now | honest docs and a clean RHEL9 install; no multi-site features |

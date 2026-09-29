@@ -10,7 +10,7 @@ twice: statically at load, and resolved against the specimen registry
 
 ```json
 {
-  "schema": "sldea-lifecycle/1",
+  "schema": "dea-life/1",
   "name": "...", "description": "...",
   "geometry": "planar | bender",
   "drive": {"waveform": "SINE|SQUARE|RAMP", "freq_hz": 5.0,
@@ -90,16 +90,16 @@ precursor ordering is itself the scientific result).
 
 ## Shipped templates
 
-- `life_dea_bender_v1.json` — the flagship **LIFE-DEA** protocol
-  (**L**ifecycle **I**nterrogation for **F**light **E**nvironments —
-  DEA) for multilayer benders (20×40 / 20×80 mm): 2 s on / 2 s off
+- `dea_life_bender_v1.json` — the flagship **DEA-LIFE** protocol
+  (**DEA** **L**ifecycle **I**nterrogation for **F**light
+  **E**nvironments) for multilayer benders (20×40 / 20×80 mm): 2 s on / 2 s off
   square wave (0.25 Hz) at 2.0 kV, fast interlude per 10³ cycles, full
   per 2.5×10⁴, milestone snapshots at 10³ / 10⁴ / 10⁵, 10⁶-cycle cap
   (author decisions 2026-09-29, docs/MOTIVATION.md). At 0.25 Hz the cap
   is ~46 days of cycling (MOTIVATION open question 1). A specimen
   reaching the cap is a SUSPENSION (right-censored) — the claim reads
   "N cycles without dielectric breakdown".
-- `life_dea_planar_v1.json` — single-layer disc protocol
+- `dea_life_planar_v1.json` — single-layer disc protocol
   (stratosphere-paper lineage): 50% of median E_BD at the test
   temperature, 5 Hz sine, fast interlude per 10³ cycles, full per
   5×10⁴, milestone snapshots at 10³ / 10⁴ / 10⁵, 10⁶-cycle cap.

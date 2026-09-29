@@ -1,4 +1,4 @@
-"""SLDEA Lifecycle Manager core.
+"""DEA-LIFE core.
 
 Importing this package injects ``lib/`` (the vendored Digital Multitool
 modules, see lib/VENDOR.md) onto sys.path exactly once, so the vendored

@@ -24,7 +24,7 @@ means a clean upgrade.
 | sldea_edge.py | planar top-down disc edge detection (headless functions consumed by vision/planar.py) | none |
 | sldea_plot.py | plotting engine; figexport contract source (PNG + tidy CSV + figspec.json) | none |
 | scope_trace.py | min-max decimation for trace freezing | none |
-| presets_path.py | share-with-local-fallback path resolver | **appname `scpi_control` → `sldea_lifecycle`** in LOCAL_FALLBACK / LOCAL_FALLBACK2 (keeps this app's local mirrors separate) |
+| presets_path.py | share-with-local-fallback path resolver | **appname `scpi_control` → `dea_life`** in LOCAL_FALLBACK / LOCAL_FALLBACK2 (keeps this app's local mirrors separate; was `sldea_lifecycle` until the 2026-09-29 DEA-LIFE rename) |
 | waveform_render.py | drive waveform preview rendering | none |
 | ui_widgets.py | Tooltip / ScrollableTab / SplashScreen (GUI layer) | none |
 | tk_fontfix.py | must import before tkinter (emoji/X crash guard) | none |

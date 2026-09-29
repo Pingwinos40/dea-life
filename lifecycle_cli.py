@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SLDEA Lifecycle Manager CLI.
+"""DEA-LIFE CLI.
 
     validate    parse + resolve a recipe against a specimen; print the
                 feasibility + life-factor advisories, run nothing

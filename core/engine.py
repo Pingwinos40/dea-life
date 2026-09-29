@@ -141,7 +141,7 @@ class LifecycleEngine:
         log = self.runlog.log
         self.state = 'VALIDATE'
         run_id = os.path.basename(self.run_dir)
-        log(f'== SLDEA Lifecycle run {run_id} '
+        log(f'== DEA-LIFE run {run_id} '
             f'({self.mode.upper()}) ==')
 
         store = _runstore.RunStore(self.run_dir, resume=self.resume)
@@ -444,7 +444,7 @@ class LifecycleEngine:
         drv = r['drive']
         feas = r.get('feasibility') or {}
         lines = [
-            f'SLDEA Lifecycle Run  --  {run_id}',
+            f'DEA-LIFE Run  --  {run_id}',
             f'Started: {self.clock.now_iso(timespec="seconds")}',
             'MODE: *** DRY RUN (HV never commanded) ***'
             if self.mode == 'dry' else
