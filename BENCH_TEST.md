@@ -19,7 +19,11 @@ its probe.
 - [ ] NCYC max: probe binary-search result recorded here: ______
 - [ ] MTRIG-to-first-edge latency recorded at 1 Hz / 10 Hz: ______
 - [ ] FREQUENCY verification: scope reads f within ±2% during bursts at
-      0.1 / 1 / 5 / 10 Hz
+      0.1 / 0.25 / 1 / 5 / 10 Hz
+- [ ] SQUARE (the bender flagship waveform since 2026-09-29): repeat the
+      idle-level check with `WVTP SQUARE` at 0.25 Hz — STPS 270 must
+      land in the low half-cycle, so the armed burst idles at the
+      minimum
 
 ## §Q — kill paths (probe: `bench/probe_kill_path.py`, dummy load, low voltage)
 

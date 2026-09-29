@@ -128,9 +128,7 @@ def cmd_validate(args, cfg):
     for m in feas.get('msgs', []):
         print(f'  feasibility: {m}')
     if feas and not feas.get('msgs'):
-        print(f"  feasibility: ok (I_pk "
-              f"{'' if feas['i_pk_ua'] is None else round(feas['i_pk_ua'])}"
-              f" uA)")
+        print(f"  feasibility: ok ({_feasibility.summary(feas)})")
     print(f"  planned cycles: {resolved['planned_cycles']:,}  "
           f"cap {resolved['stop']['max_cycles']:,}")
     for line in _lifefactors.advisory_lines(
@@ -234,10 +232,16 @@ def cmd_status(args, cfg):
 
 
 def cmd_feasibility(args, cfg):
-    rep = _feasibility.check_drive(args.freq, args.c_nf, args.v_pk)
-    print(f"I_pk = {rep['i_pk_ua']:.1f} uA "
-          f"({100 * rep['i_frac']:.0f}% of Trek +/-2 mA)")
-    print(f"max feasible f at this C/V: {rep['max_feasible_hz']:.1f} Hz")
+    rep = _feasibility.check_drive(args.freq, args.c_nf, args.v_pk,
+                                   waveform=args.waveform)
+    if rep.get('edge_s') is not None:
+        print(f"square edge = {1000 * rep['edge_s']:.1f} ms "
+              f"({100 * rep['edge_frac']:.1f}% of the half-period) at "
+              f"{rep['i_pk_ua']:.0f} uA (Trek-limited)")
+    else:
+        print(f"I_pk = {rep['i_pk_ua']:.1f} uA "
+              f"({100 * rep['i_frac']:.0f}% of Trek +/-2 mA)")
+    print(f"max feasible f at this C/V: {rep['max_feasible_hz']:.2f} Hz")
     print(f"verdict: {rep['verdict']}")
     for m in rep['msgs']:
         print(f'  {m}')
@@ -317,6 +321,8 @@ def main(argv=None):
     p.add_argument('--freq', type=float, required=True)
     p.add_argument('--c-nf', type=float, required=True)
     p.add_argument('--v-pk', type=float, required=True)
+    p.add_argument('--waveform', default='SINE',
+                   choices=('SINE', 'SQUARE', 'RAMP'))
 
     p = sub.add_parser('specimen')
     p.add_argument('action', choices=('list', 'show', 'create'))

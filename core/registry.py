@@ -30,7 +30,8 @@ SPECIMEN_COLUMNS = [
     'cycles_accum', 'actuated_s_accum', 'last_run_id', 'failure_mode',
     'notes',
 ]
-GEOMETRIES = ('planar16', 'bender_10x20', 'bender_20x40', 'custom')
+GEOMETRIES = ('planar16', 'bender_10x20', 'bender_20x40', 'bender_20x80',
+              'custom')
 STATUSES = ('virgin', 'in_test', 'failed', 'suspended', 'retired')
 
 REGISTRY_NAME = 'specimens.csv'
@@ -42,7 +43,8 @@ DEFAULT_CAPS = {
                  "override _defaults by geometry. lab_ceiling_kv "
                  "bounds everything."),
     '_defaults': {'planar16': 10.0, 'bender_10x20': 2.5,
-                  'bender_20x40': 2.5, 'custom': 2.0},
+                  'bender_20x40': 2.5, 'bender_20x80': 2.5,
+                  'custom': 2.0},
     'lab_ceiling_kv': 10.0,
     'specimens': {},
 }

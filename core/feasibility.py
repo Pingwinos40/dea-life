@@ -9,8 +9,16 @@ commanded waveform simply does not reach the specimen and every
 BEFORE the run (here) and the delivered waveform is checked DURING it
 (drive-fidelity rule in core/failure.py).
 
+SQUARE drive (the bender flagship since 2026-09-29) is different: its
+edges ask for unbounded current, so the Trek runs AT its limit on every
+edge by design. What matters there is how long an edge takes, t_edge =
+C*dV / I_available (or dV / slew when that is slower), against the
+half-period: long edges round the square into a trapezoid, cut the
+time spent at v_pk, and bias the actuated-seconds dose (duty 0.5).
+
 Numbers are the 610E datasheet's; the -G variant is assumed identical
-until the bench manual check (plan risk #6). All overridable per call.
+until the bench manual check (docs/SAFETY.md known gap 4). All
+overridable per call.
 """
 import math
 
@@ -22,6 +30,10 @@ TREK_LS_BW_HZ = 1200.0        # large-signal bandwidth, DC..1.2 kHz
 # refuse when there is effectively no headroom for leakage + tolerance.
 WARN_FRAC = 0.60
 REFUSE_FRAC = 0.90
+# SQUARE: edge time as a fraction of the half-period. 5% ~ a 2.5% dose
+# error; 25% and the specimen no longer sees a square wave at all.
+EDGE_WARN_FRAC = 0.05
+EDGE_REFUSE_FRAC = 0.25
 
 
 def peak_current_ua(freq_hz, c_nf, v_pk_kv, v_min_kv=0.0):
@@ -52,15 +64,81 @@ def max_feasible_hz(c_nf, v_pk_kv, v_min_kv=0.0, leak_margin_ua=0.0,
     return budget / (2.0 * math.pi * float(c_nf) * v_amp_kv)
 
 
+def square_edge_s(c_nf, v_pk_kv, v_min_kv=0.0, leak_margin_ua=50.0,
+                  i_limit_ua=TREK_I_LIMIT_UA,
+                  slew_v_per_us=TREK_SLEW_V_PER_US):
+    """(edge seconds, edge current uA) for one square-wave transition:
+    the Trek charges C through dV at whatever current is left after the
+    leakage margin, or at its slew limit if that is slower.
+    nF * kV = uC; uC / uA = s."""
+    dv_kv = abs(float(v_pk_kv) - float(v_min_kv))
+    i_avail = max(float(i_limit_ua) - float(leak_margin_ua), 1e-9)
+    t_current = float(c_nf) * dv_kv / i_avail
+    t_slew = dv_kv * 1000.0 / float(slew_v_per_us) / 1e6
+    t_edge = max(t_current, t_slew)
+    i_edge = float(c_nf) * dv_kv / t_edge if t_edge > 0 else 0.0
+    return t_edge, i_edge
+
+
+def check_square(freq_hz, c_nf, v_pk_kv, v_min_kv=0.0,
+                 leak_margin_ua=50.0, i_limit_ua=TREK_I_LIMIT_UA):
+    """Feasibility verdict for a SQUARE cycle (see module doc)."""
+    msgs = []
+    half_s = 0.5 / float(freq_hz)
+    if c_nf is None or float(c_nf) <= 0:
+        return {
+            'verdict': 'warn', 'waveform': 'SQUARE', 'i_pk_ua': None,
+            'i_frac': None, 'edge_s': None, 'edge_frac': None,
+            'slew_v_per_us': TREK_SLEW_V_PER_US, 'max_feasible_hz': None,
+            'msgs': ["specimen capacitance unknown -- square-edge check "
+                     "SKIPPED; record C in the registry (measured or "
+                     "geometry estimate) to arm it"],
+        }
+    t_edge, i_edge = square_edge_s(c_nf, v_pk_kv, v_min_kv,
+                                   leak_margin_ua, i_limit_ua)
+    edge_frac = t_edge / half_s
+    # highest f whose edges stay under the refuse fraction
+    fmax = (EDGE_REFUSE_FRAC / (2.0 * t_edge) if t_edge > 0
+            else float('inf'))
+    verdict = 'ok'
+    if edge_frac >= EDGE_REFUSE_FRAC:
+        verdict = 'refuse'
+        msgs.append(
+            f"square edges take {1000 * t_edge:.1f} ms at the Trek "
+            f"current limit = {100 * edge_frac:.0f}% of the "
+            f"{1000 * half_s:.0f} ms half-period -- REFUSED (the "
+            f"specimen would not see a square wave). Max feasible "
+            f"frequency at this C and voltage: {fmax:.2f} Hz")
+    elif edge_frac >= EDGE_WARN_FRAC:
+        verdict = 'warn'
+        msgs.append(
+            f"square edges take {1000 * t_edge:.1f} ms = "
+            f"{100 * edge_frac:.0f}% of the half-period -- the actuated-"
+            f"seconds dose (duty 0.5) overstates by ~"
+            f"{50 * edge_frac:.0f}%")
+    if freq_hz > TREK_LS_BW_HZ:
+        verdict = 'refuse'
+        msgs.append(f"{freq_hz:g} Hz is beyond the Trek's large-signal "
+                    f"bandwidth ({TREK_LS_BW_HZ:g} Hz)")
+    return {'verdict': verdict, 'waveform': 'SQUARE', 'i_pk_ua': i_edge,
+            'i_frac': i_edge / float(i_limit_ua), 'edge_s': t_edge,
+            'edge_frac': edge_frac, 'slew_v_per_us': TREK_SLEW_V_PER_US,
+            'max_feasible_hz': fmax, 'msgs': msgs}
+
+
 def check_drive(freq_hz, c_nf, v_pk_kv, v_min_kv=0.0, leak_margin_ua=50.0,
-                i_limit_ua=TREK_I_LIMIT_UA):
+                i_limit_ua=TREK_I_LIMIT_UA, waveform='SINE'):
     """Feasibility verdict for one cycling condition.
 
     Returns a dict: verdict 'ok' | 'warn' | 'refuse', the numbers behind
     it, and human-readable messages. c_nf None or <= 0 means the specimen
     capacitance is unknown -- that is a WARN, not a pass: the check
-    cannot clear a drive it cannot compute.
+    cannot clear a drive it cannot compute. SQUARE goes to
+    check_square(); SINE and RAMP use the sinusoidal peak-current model.
     """
+    if str(waveform).upper() == 'SQUARE':
+        return check_square(freq_hz, c_nf, v_pk_kv, v_min_kv,
+                            leak_margin_ua, i_limit_ua)
     msgs = []
     if c_nf is None or float(c_nf) <= 0:
         return {
@@ -102,6 +180,23 @@ def check_drive(freq_hz, c_nf, v_pk_kv, v_min_kv=0.0, leak_margin_ua=50.0,
                     f"bandwidth ({TREK_LS_BW_HZ:g} Hz)")
     return {'verdict': verdict, 'i_pk_ua': ipk, 'i_frac': frac,
             'slew_v_per_us': slew, 'max_feasible_hz': fmax, 'msgs': msgs}
+
+
+def summary(rep):
+    """One human line for a check_drive() report, whatever the
+    waveform. A SQUARE edge always runs at the Trek limit, so its line
+    leads with edge time rather than a '98% of limit' that reads like
+    an alarm."""
+    if rep.get('waveform') == 'SQUARE':
+        if rep.get('edge_s') is None:
+            return 'square edge: C unknown -- record c_est_nf'
+        return (f"square edge {1000 * rep['edge_s']:.1f} ms = "
+                f"{100 * rep['edge_frac']:.1f}% of the half-period "
+                f"(Trek-limited, {rep['i_pk_ua']:.0f} uA)")
+    if rep.get('i_pk_ua') is None:
+        return 'I_pk: C unknown -- record c_est_nf'
+    return (f"I_pk {rep['i_pk_ua']:.0f} uA "
+            f"({100 * (rep.get('i_frac') or 0):.0f}% of Trek +/-2 mA)")
 
 
 def scope_window_horizontal_ok(freq_hz, window_s):

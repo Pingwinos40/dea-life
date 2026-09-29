@@ -52,8 +52,8 @@ folder (read-only by design — stopping HV requires bench presence).
 - `analysis/` — trend reduction, Weibull (censoring-correct), report
   generator, compliance matrix, figure export
 - `gui/` — Tkinter app (Setup · Pre-flight · Run · Review · Campaign)
-- `recipes/` — test templates; flagship: **LIFE-DEA** (Lifecycle
-  Interrogation for Flight Environments — DEA)
+- `recipes/` — test templates; flagship: **LIFE-DEA** bender protocol
+  (Lifecycle Interrogation for Flight Environments — DEA)
 - `lib/` — vendored Digital Multitool modules (`lib/VENDOR.md`)
 - `tests/` — headless suites (`python run_tests.py`); `bench/` —
   hardware-in-the-loop probes (see `BENCH_TEST.md`)

@@ -12,6 +12,8 @@ sldea_presets rule). live additionally requires Linux
 """
 import sys
 
+from . import feasibility as _feasibility
+
 MODES = ('mock', 'dry', 'live')
 
 # Typed confirmations: the engine never blocks on stdin itself -- the
@@ -136,9 +138,7 @@ def gate_chain(mode, hal, resolved, cap_kv, run_id, env_sample,
         add('feasibility', True, 'no drive voltage resolved (no cycling)')
     else:
         add('feasibility', feas['verdict'] != 'refuse',
-            '; '.join(feas['msgs']) or
-            f"I_pk {feas['i_pk_ua']:.0f} uA "
-            f"({100 * (feas['i_frac'] or 0):.0f}% of Trek limit)")
+            '; '.join(feas['msgs']) or _feasibility.summary(feas))
 
     vpk = resolved['drive'].get('v_pk_kv') or 0.0
     add('specimen_cap', vpk <= cap_kv + 1e-9,

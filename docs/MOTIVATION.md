@@ -87,7 +87,7 @@ were lost because they lived in volatile memory.
 | audience | the author's thesis first | data provenance and analysis must survive thesis-committee scrutiny |
 | qualification | aim at real flight qualification; that is what carries over to the space economy | NASA-STD-5017 / ECSS life factors and the standards-pack templates are real roadmap items, not decoration |
 | distribution | open source (GPLv3); single-lab use for now | honest docs and a clean RHEL9 install; no multi-site features |
-| specimens | benders primary: 20×40 and 20×80 mm, usually encapsulated; layer count and capacitance vary per build | bender recipe becomes the flagship; capacitance is measured per specimen and the Trek feasibility gate runs per specimen, never from a nominal |
+| specimens | benders primary: 20×40 and 20×80 mm, usually encapsulated; layer count and capacitance vary per build | done: bender recipe is the flagship and `bender_20x80` is a registry geometry; capacitance comes from each specimen's registry row, never a nominal |
 | materials | every MLDEA chemistry we build (acrylics, silicones, future ones) | material is a registry field, never a code path |
 | sample size | no fixed 3/5/10; enough specimens for the error to converge | campaign view reports Weibull / B10 confidence-bound width as specimens accrue; the stopping rule is a CI-width target (value open). Zero-failure campaigns need a Weibayes-style lower bound (not implemented yet) |
 | cold | dry-ice bed, thermocouple-verified (the 10⁴-cycle paper method) | temperature stays operator-attested until sensors land (roadmap 2) |
@@ -95,9 +95,9 @@ were lost because they lived in volatile memory.
 | drive in vacuum | the Trek need not reach into the chamber; our own untethered circuits (up to 4 kV) can drive inside | the tool needs a **declared-drive** mode: drive parameters are declared, not commanded, and cycles come from the declared schedule and/or the video (roadmap 10) |
 | vacuum HV gate | remove the pressure-band HV block; keep a logged warning note; never lock an operator out of a pressure | done (roadmap 4): the Paschen gate always passes, warns on the pre-flight, and writes the note to run.log, setup.txt and events.csv; no typed override |
 | radiation | review existing footage now; live in-chamber only via reliable on-device CV later | roadmap 8 now, roadmap 12 later |
-| cycle cap | 10⁶ with milestone reports | report generation at milestones during the run (set open) |
-| waveform | square on/off. 5 s / 5 s is the preferred look; the default is 2 s / 2 s (0.25 Hz) so each half-period covers the bending time constant | square edges are Trek-current-limited; core/feasibility.py models sine only today and needs a square-wave check (edge time = C·ΔV / I_max vs the half-period) |
-| drive level | 2.0 kV default for benders (more bending than 1.75 kV) | bender recipe default; per-specimen hard caps still apply |
+| cycle cap | 10⁶ with milestone reports | done: recipe `milestones` key; flagship recipes snapshot at 10³ / 10⁴ / 10⁵ (the final report covers the cap) |
+| waveform | square on/off. 5 s / 5 s is the preferred look; the default is 2 s / 2 s (0.25 Hz) so each half-period covers the bending time constant | done: flagship is SQUARE 0.25 Hz; the feasibility gate models square edges (edge time C·ΔV / I vs the half-period) |
+| drive level | 2.0 kV default for benders (more bending than 1.75 kV) | done: flagship drive and reference level; per-specimen hard caps still apply |
 | failure definition | open; probably test-dependent | every criterion keeps logging after the first trip; the recipe names the official one and the claim states it |
 | operators | anyone; set-and-forget | unattended live runs rest on software zero alone until the Trek remote-TTL interlock exists (docs/SAFETY.md known gap 1); roadmap 1 is therefore a prerequisite for unattended use |
 | measurement hardware | Trek + scope monitors now; DEA-Characterization-Board v1 needs the Trek, v2 will drive its own circuits | the board slots in as a HAL plugin (roadmap 3) |
@@ -125,8 +125,8 @@ were lost because they lived in volatile memory.
 4. **Failure definition.** Short (breakdown), loss of bending
    (amplitude ratio), capacitance or leakage drift, or recipe-specific.
 5. **Sample-size stopping rule.** Which CI width counts as converged.
-6. **Milestones.** Which cycle counts get a report (e.g. 10³, 10⁴,
-   10⁵, 10⁶).
+6. **Milestones.** The flagship recipes use 10³ / 10⁴ / 10⁵ (the final
+   report covers the 10⁶ cap); adjust if other counts matter.
 7. **Declared-drive cycle counting.** Trust the declared schedule,
    count bends in the video, or both with a cross-check.
 
@@ -145,7 +145,7 @@ BENCH_TEST.md §P–§T and §U.
    v1 measurement with Trek drive, v2 own drive.
 4. Vacuum gate becomes an advisory note (decision above). **Done.**
 5. Bender flagship recipe: 2 kV, square 2 s / 2 s, 10⁶ cap, milestone
-   reports, square-wave feasibility check.
+   reports, square-wave feasibility check. **Done.**
 6. Background-agnostic bender vision: any flat background, no
    backlight.
 7. Several specimens per run (open question 2).

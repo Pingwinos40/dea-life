@@ -37,6 +37,43 @@ def test_bender_worked_example_refuses():
     assert rep2['verdict'] == 'ok', rep2
 
 
+def test_square_edge_math():
+    # 10 nF through 2 kV on 2000 - 50 uA: 20 uC / 1950 uA = 10.26 ms,
+    # far slower than the 57 us slew limit -> current-limited
+    t, i = fz.square_edge_s(10.0, 2.0, 0.0)
+    assert abs(t - 20.0 / 1950.0) < 1e-12, t
+    assert abs(i - 1950.0) < 1e-6, i
+
+
+def test_square_flagship_ok_and_fast_square_refused():
+    # bender flagship (2026-09-29): 2 kV, 0.25 Hz, nF-class stack
+    rep = fz.check_drive(0.25, 10.0, 2.0, waveform='SQUARE')
+    assert rep['verdict'] == 'ok' and rep['edge_frac'] < 0.01, rep
+    # same stack at 10 Hz: ~10 ms edges in a 50 ms half-period
+    rep = fz.check_drive(10.0, 10.0, 2.0, waveform='SQUARE')
+    assert rep['verdict'] == 'warn', rep
+    # a 100 nF stack at 10 Hz: edges eat the half-period
+    rep = fz.check_drive(10.0, 100.0, 2.0, waveform='SQUARE')
+    assert rep['verdict'] == 'refuse', rep
+    assert rep['max_feasible_hz'] < 10.0
+    assert 'REFUSED' in rep['msgs'][0]
+
+
+def test_summary_line_per_waveform():
+    sq = fz.summary(fz.check_drive(0.25, 10.0, 2.0, waveform='SQUARE'))
+    assert sq.startswith('square edge') and 'Trek-limited' in sq, sq
+    sn = fz.summary(fz.check_drive(5.0, 5.0, 1.5))
+    assert sn.startswith('I_pk') and '% of Trek' in sn, sn
+    assert 'C unknown' in fz.summary(
+        fz.check_drive(0.25, None, 2.0, waveform='SQUARE'))
+
+
+def test_square_unknown_c_warns():
+    rep = fz.check_drive(0.25, None, 2.0, waveform='SQUARE')
+    assert rep['verdict'] == 'warn' and rep['edge_s'] is None
+    assert 'SKIPPED' in rep['msgs'][0]
+
+
 def test_unknown_c_warns_not_passes():
     rep = fz.check_drive(5.0, None, 1.5)
     assert rep['verdict'] == 'warn'

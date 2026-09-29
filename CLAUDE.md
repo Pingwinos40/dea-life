@@ -44,8 +44,9 @@ enters the repo.
 - MSO24: frequency measurement token is `FREQUENCY`, never `FREQ`;
   `9.9E37` = offscreen = clipped-but-real (counts as over-trip).
 - Trek 610E-G: ±2 mA — feasibility gate computes I_pk = 2πfCV before
-  any run; scope current monitor noise floor ≈ 6 µA (fault detection
-  yes, nA leakage trending no — leakage is measured in DC holds only).
+  any run (SQUARE: edge time C·ΔV / I vs the half-period instead);
+  scope current monitor noise floor ≈ 6 µA (fault detection yes, nA
+  leakage trending no — leakage is measured in DC holds only).
 - `SldeaProfile` staircase constraints assume ≥ 60 s landings; recipe
   validation pre-checks `settle_s + snap_lead_s < landing_s` so the
   constructor can never throw mid-run.
