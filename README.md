@@ -57,7 +57,8 @@ folder (read-only by design — stopping HV requires bench presence).
 - `lib/` — vendored Digital Multitool modules (`lib/VENDOR.md`)
 - `tests/` — headless suites (`python run_tests.py`); `bench/` —
   hardware-in-the-loop probes (see `BENCH_TEST.md`)
-- `docs/` — SAFETY.md, DATA_FORMATS.md, RECIPES.md
+- `docs/` — MOTIVATION.md (why, scope, roadmap), SAFETY.md,
+  DATA_FORMATS.md, RECIPES.md
 
 ## Safety, in one paragraph
 
