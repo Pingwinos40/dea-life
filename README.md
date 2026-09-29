@@ -69,10 +69,11 @@ watchdog (100 µA deviation / 3 s sustained, credible-baseline gated)
 aborts and discharges; drive-fidelity and monitor-loss rules pause at
 0 kV. Specimen hard caps live in `admin_caps.json` (no GUI editor) and
 are enforced twice: at recipe validation and clamped inside every drive
-call. HV is inhibited while attested chamber pressure is inside the
-Paschen band. Software zero is currently the only kill path — the Trek's
-remote-TTL hardware interlock is the first roadmap upgrade. Details and
-provenance: `docs/SAFETY.md`.
+call. An attested chamber pressure inside the Paschen band raises a
+logged warning but never blocks HV (encapsulate electrodes). Software
+zero is currently the only kill path — the Trek's remote-TTL hardware
+interlock is the first roadmap upgrade. Details and provenance:
+`docs/SAFETY.md`.
 
 ## License
 

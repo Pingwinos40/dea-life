@@ -10,10 +10,10 @@
     specimen    create / list / show registry entries
     replay      (vision phase) run the bender pipeline over a recording
 
-The CLI owns the terminal: typed confirmations (ENERGIZE, BLIND,
-OVERRIDE PASCHEN <run_id>) are collected HERE and passed to the engine
-as tokens -- the engine never blocks on stdin. In mock mode nothing
-energizes and no confirmation is asked.
+The CLI owns the terminal: typed confirmations (ENERGIZE, BLIND) are
+collected HERE and passed to the engine as tokens -- the engine never
+blocks on stdin. In mock mode nothing energizes and no confirmation is
+asked.
 """
 import argparse
 import json
@@ -142,7 +142,7 @@ def cmd_validate(args, cfg):
     return 0
 
 
-def _collect_confirmations(args, resolved, cap, run_id, hal, band):
+def _collect_confirmations(args, resolved, cap, hal, band):
     """Typed confirmations for live mode: interactive prompts, or the
     GUI passes tokens it collected in ITS typed dialogs via --confirm
     (the typing still happened; this is transport, not a bypass)."""
@@ -151,14 +151,10 @@ def _collect_confirmations(args, resolved, cap, run_id, hal, band):
         return tokens
     drv = resolved['drive']
     env = hal.env.current() if hal.env else None
-    if _safety.paschen_inhibited(None if env is None else env.get('p_pa'),
-                                 band):
-        want = _safety.paschen_override_token(run_id)
-        print(f"HV-inhibit: attested pressure is inside the Paschen "
-              f"band {band}. Type '{want}' to override, or press Enter "
-              f"to refuse:")
-        if input('> ').strip() == want:
-            tokens.add(want)
+    note = _safety.paschen_note(None if env is None else env.get('p_pa'),
+                                band)
+    if note:
+        print(f'NOTE (Paschen advisory): {note}')
     print(f"About to ENERGIZE: {drv['v_pk_kv']:g} kV pk on specimen "
           f"{resolved['specimen_id']} (hard cap {cap:g} kV), "
           f"{resolved['planned_cycles']:,} planned cycles.")
@@ -205,8 +201,9 @@ def cmd_run(args, cfg, resume=False):
             op = input('  your name: ').strip()
             hal.env.attest(t_c, p_mbar, op, clock.now_iso())
 
-    band = tuple(cfg.get('paschen_block_pa') or reg.paschen_band_pa())
-    tokens = _collect_confirmations(args, resolved, cap, run_id, hal,
+    band = tuple(cfg.get('paschen_warn_pa')
+                 or _safety.DEFAULT_PASCHEN_BAND_PA)
+    tokens = _collect_confirmations(args, resolved, cap, hal,
                                     band)
 
     if args.mode != 'mock':

@@ -13,7 +13,6 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
-from tkinter import messagebox
 
 from core import runstore as _runstore
 from core import safety as _safety
@@ -41,7 +40,7 @@ class PreflightScreen(tk.Frame):
                 ('dataroot', 'Data root writable, not OneDrive'),
                 ('disk', 'Disk space'),
                 ('attest', 'Environment attested + fresh'),
-                ('paschen', 'Paschen band vs attested pressure'),
+                ('paschen', 'Paschen advisory (pressure)'),
                 ('engine', 'Engine-side gates (SG/scope/camera/'
                            'watchdog)')):
             r = ChecklistRow(box, label)
@@ -138,13 +137,10 @@ class PreflightScreen(tk.Frame):
                         f"wait_env)")
             p_pa = env['p_mbar'] * 100.0
             band = st.paschen_band()
-            if _safety.paschen_inhibited(p_pa, band):
-                self.rows['paschen'].set(
-                    'FAIL', f'{p_pa:g} Pa is INSIDE the HV-inhibit '
-                            f'band {band[0]:g}..{band[1]:g} Pa '
-                            f'(Paschen minimum region). Vent past the '
-                            f'band or use the typed override at start.')
-                ok_all = False
+            note = _safety.paschen_note(p_pa, band)
+            if note:
+                # advisory since 2026-09-29: warn, never block Start
+                self.rows['paschen'].set('WARN', note)
             else:
                 self.rows['paschen'].set('PASS',
                                          f'{p_pa:g} Pa outside '
@@ -231,25 +227,6 @@ class PreflightScreen(tk.Frame):
             if not typed:
                 return
             confirms.append(want)
-            env = setup['env']
-            band = st.paschen_band()
-            if _safety.paschen_inhibited(env['p_mbar'] * 100.0, band):
-                run_name = setup.get('run_name') or 'pending'
-                tok = _safety.paschen_override_token(run_name)
-                if not setup.get('run_name'):
-                    messagebox.showerror(
-                        'Paschen override needs a run name',
-                        'Set an explicit run name on the Setup tab so '
-                        'the override token is bound to this run.',
-                        parent=self)
-                    return
-                typed = TypedConfirm.ask(
-                    self, 'PASCHEN OVERRIDE',
-                    f'Attested pressure is inside the HV-inhibit band.'
-                    f'\nType exactly:\n{tok}', tok)
-                if not typed:
-                    return
-                confirms.append(tok)
         st.launch_run(mode, confirms)
 
 

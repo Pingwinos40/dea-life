@@ -244,6 +244,31 @@ def test_control_file_commands():
         assert status['control_ack_seq'] == 1
 
 
+def test_paschen_band_warns_but_arms():
+    # 2026-09-29 (docs/MOTIVATION.md, roadmap 4): 5 kPa is inside the
+    # Paschen band and is the stratosphere-paper vacuum condition. The
+    # run must arm and complete; the warning must land on the record.
+    with tempfile.TemporaryDirectory() as tmp:
+        eng, run_dir, hal = _mk(tmp)
+        hal.env.p_mbar = 50.0                       # 5 kPa
+        assert eng.run() == 'complete'
+        events = _read_csv(run_dir, 'events.csv')
+        warns = [e for e in events if e['rule_id'] == 'paschen']
+        assert warns and all(e['action'] == 'warn' for e in warns)
+        assert 'Paschen band' in warns[0]['message']
+        setup = open(os.path.join(run_dir, 'setup.txt'),
+                     encoding='utf-8').read()
+        assert '--- Advisories ---' in setup and 'paschen:' in setup
+
+
+def test_ambient_run_has_no_paschen_note():
+    with tempfile.TemporaryDirectory() as tmp:
+        eng, run_dir, hal = _mk(tmp)
+        assert eng.run() == 'complete'
+        events = _read_csv(run_dir, 'events.csv')
+        assert not [e for e in events if e['rule_id'] == 'paschen']
+
+
 def _run():
     fns = [v for k, v in sorted(globals().items())
            if k.startswith('test_')]

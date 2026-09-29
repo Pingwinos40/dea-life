@@ -24,6 +24,7 @@ import statistics
 import sldea_profile  # vendored
 
 from . import cycles as _cycles
+from . import safety as _safety
 from .failure import Firing
 
 MONITOR_TICK_S = 0.5      # bench-validated watchdog cadence (gui.py:3866)
@@ -87,6 +88,7 @@ class RunContext:
         self._partial_cycles = 0             # abort-mid-chunk credit
         self.recent_events = collections.deque(maxlen=10)
         self.hv_allowed = True               # False after hard trip
+        self.paschen_band_pa = _safety.DEFAULT_PASCHEN_BAND_PA
 
     # ---- time ----------------------------------------------------------
     def el(self):
@@ -1074,6 +1076,12 @@ def run_wait_env(ctx, block, idx):
               message=f"environment attested: {cur['t_c']:g} C, "
                       f"{cur['p_mbar']:g} mbar (by "
                       f"{cur.get('operator', '?')})")
+    # the pre-arm Paschen advisory only saw the first attestation; a
+    # mid-run pump-down or vent lands here (advisory, 2026-09-29)
+    note = _safety.paschen_note(cur.get('p_pa', cur['p_mbar'] * 100.0),
+                                ctx.paschen_band_pa)
+    if note:
+        ctx.event('gate', 'paschen', 'warn', message=note)
     ctx.store.blocks.write({
         'block_idx': idx, 'loop_path': block.get('loop_path', ''),
         'type': 'wait_env', 't_start_iso': t_start,

@@ -93,7 +93,7 @@ were lost because they lived in volatile memory.
 | cold | dry-ice bed, thermocouple-verified (the 10⁴-cycle paper method) | temperature stays operator-attested until sensors land (roadmap 2) |
 | vacuum | chamber with an acrylic viewing window; no TVAC | camera looks through the window; vacuum specimens are encapsulated |
 | drive in vacuum | the Trek need not reach into the chamber; our own untethered circuits (up to 4 kV) can drive inside | the tool needs a **declared-drive** mode: drive parameters are declared, not commanded, and cycles come from the declared schedule and/or the video (roadmap 10) |
-| vacuum HV gate | remove the pressure-band HV block; keep a logged warning note; never lock an operator out of a pressure | pending change to core/safety.py, the Pre-flight GUI, config, docs/SAFETY.md and tests (roadmap 4) |
+| vacuum HV gate | remove the pressure-band HV block; keep a logged warning note; never lock an operator out of a pressure | done (roadmap 4): the Paschen gate always passes, warns on the pre-flight, and writes the note to run.log, setup.txt and events.csv; no typed override |
 | radiation | review existing footage now; live in-chamber only via reliable on-device CV later | roadmap 8 now, roadmap 12 later |
 | cycle cap | 10⁶ with milestone reports | report generation at milestones during the run (set open) |
 | waveform | square on/off. 5 s / 5 s is the preferred look; the default is 2 s / 2 s (0.25 Hz) so each half-period covers the bending time constant | square edges are Trek-current-limited; core/feasibility.py models sine only today and needs a square-wave check (edge time = C·ΔV / I_max vs the half-period) |
@@ -143,7 +143,7 @@ BENCH_TEST.md §P–§T and §U.
    `EnvironmentSource`, replacing typed attestations.
 3. DEA-Characterization-Board plugin (`HAL_PLUGINS['charboard']`):
    v1 measurement with Trek drive, v2 own drive.
-4. Vacuum gate becomes an advisory note (decision above).
+4. Vacuum gate becomes an advisory note (decision above). **Done.**
 5. Bender flagship recipe: 2 kV, square 2 s / 2 s, 10⁶ cap, milestone
    reports, square-wave feasibility check.
 6. Background-agnostic bender vision: any flat background, no

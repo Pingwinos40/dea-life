@@ -113,11 +113,12 @@ class Banner(tk.Frame):
 
 
 class ChecklistRow(tk.Frame):
-    """PENDING / RUNNING / PASS / FIX / FAIL row for the pre-flight."""
+    """PENDING / RUNNING / PASS / WARN / FIX / FAIL row for the
+    pre-flight. WARN is advisory: it never disables Start."""
 
     STATES = {'PENDING': ('#666', '...'), 'RUNNING': ('#8a5a00', '>>'),
-              'PASS': ('#2e7d32', 'OK'), 'FIX': ('#8a5a00', 'FIX'),
-              'FAIL': ('#a01010', 'X')}
+              'PASS': ('#2e7d32', 'OK'), 'WARN': ('#8a5a00', '!'),
+              'FIX': ('#8a5a00', 'FIX'), 'FAIL': ('#a01010', 'X')}
 
     def __init__(self, master, label, action_text=None, action_cb=None):
         super().__init__(master)
