@@ -33,6 +33,7 @@ committed:
 | `RINSC_TMP` | scratch for local clip copies | `campaign.py` (tracing) |
 | `RINSC_SRC` | clip folder for single-clip runs | `trace_fingers.py` without clip args |
 | `FFMPEG` | ffmpeg binary (else PATH, else the `imageio-ffmpeg` wheel) | tracing |
+| `RINSC_DECODE` | `y` (default, raw Y plane) or `gray` (merged-campaign decode) | tracing |
 
     python vision/rinsc/campaign.py --dry          # selection only
     python vision/rinsc/campaign.py [--workers N] [--from ISO_TIME]
@@ -95,9 +96,13 @@ clip.
 - At the largest bends the #3 band tracker can stop short of the tip
   (`reach` < 1), so late #3 displacement may be under-read; check
   `reach` before trusting a late value.
-- ffmpeg `format=gray` differs between builds (one uses chroma), so two
-  machines trace slightly different pixels. A re-trace should decode
-  the raw Y plane instead, which is bit-exact across builds.
+- Decode: frames are the yuv420p Y plane mapped tv -> full range in
+  numpy (`TV_TO_FULL`), so any ffmpeg build gives the same pixels
+  (traces were byte-identical across two builds). ffmpeg's own
+  `format=gray` is build dependent, by up to 12 levels; the merged
+  2026-10-01 campaign used it, and `RINSC_DECODE=gray` restores it.
+  Do not mix the two decodes in one analysis: single-frame #3 values
+  moved by up to ~5 px between them.
 - mm use the approximate scale in `fingers.json` with no fisheye
   correction (about +/-10%).
 - Do not use file size as an actuation detector: it also follows a

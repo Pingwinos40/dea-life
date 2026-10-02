@@ -73,27 +73,50 @@ def ffmpeg_exe():
     return imageio_ffmpeg.get_ffmpeg_exe()
 
 
+# tv-range luma (16..235) -> full-range gray, round((Y - 16) * 255 / 219)
+# clipped. No ties exist (510 (Y - 16) is even, 219 (2k + 1) is odd).
+TV_TO_FULL = np.clip(np.round((np.arange(256) - 16) * 255.0 / 219.0),
+                     0, 255).astype(np.uint8)
+
+
 def frames(path, keyframes_only=False):
+    """Gray crop frames (uint8, full range) from a raw H.264 clip.
+
+    Default decode: the Y plane of yuv420p through TV_TO_FULL. ffmpeg's
+    format=gray is build dependent: on one clip the gyan.dev git build
+    (2025-12-18) read a mean 3.39 and up to 12 levels darker than
+    ffmpeg 7.1 (it mixes in chroma), while the raw Y plane was
+    bit-identical across both builds and TV_TO_FULL(Y) equals 7.1's
+    gray exactly (2026-10-02; RHEL9's 7.0.2 matched that formula on
+    2026-10-01). RINSC_DECODE=gray restores the build's format=gray,
+    which is what the merged 2026-10-01 campaign used."""
     x0, y0, x1, y1 = CFG['crop']
     w, h = x1 - x0, y1 - y0
+    legacy = os.environ.get('RINSC_DECODE', 'y') == 'gray'
+    if not legacy and (w % 2 or h % 2 or x0 % 2 or y0 % 2):
+        raise ValueError('crop must be even for the yuv420p Y plane')
     # raw H.264 has no timestamps: without a nominal input rate and
     # passthrough, ffmpeg emits ~3 frames per clip. keyframes_only decodes
     # just the I-frames (every 30th frame in this corpus, 39 per clip):
     # ~30x cheaper, enough for the moving-region pre-pass.
     skip = ['-skip_frame', 'nokey'] if keyframes_only else []
+    vf = f'crop={w}:{h}:{x0}:{y0}' + (',format=gray' if legacy else '')
+    fmt = [] if legacy else ['-pix_fmt', 'yuv420p']
     cmd = [ffmpeg_exe(), '-v', 'error',
            '-threads', os.environ.get('RINSC_FFMPEG_THREADS', '0'),
            *skip, '-framerate', '30', '-i', path,
-           '-fps_mode', 'passthrough', '-vf',
-           f'crop={w}:{h}:{x0}:{y0},format=gray', '-f', 'rawvideo', '-']
+           '-fps_mode', 'passthrough', '-vf', vf, *fmt,
+           '-f', 'rawvideo', '-']
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     n = w * h
+    frame_bytes = n if legacy else n * 3 // 2
     try:
         while True:
-            buf = p.stdout.read(n)
-            if len(buf) < n:
+            buf = p.stdout.read(frame_bytes)
+            if len(buf) < frame_bytes:
                 break
-            yield np.frombuffer(buf, np.uint8).reshape(h, w)
+            y = np.frombuffer(buf, np.uint8, count=n).reshape(h, w)
+            yield y if legacy else TV_TO_FULL[y]
     finally:
         p.stdout.close()
         p.wait()
