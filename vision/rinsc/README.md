@@ -53,7 +53,9 @@ clip.
 
 - `<clip>_traces.csv`: per frame, per finger: LK dx, dy, signed
   displacement, surviving point count; for the line-tracked strip, tip
-  position, displacement, tip angle and `reach` (traced arc / rest arc).
+  position and displacement (`tipx`/`ddx`... are the tracked point,
+  `tip_inset_px` inboard of the band end), tip angle and `reach`
+  (traced arc / rest arc).
 - `<clip>_nodes.npz`: 16 centerline nodes of the line-tracked strip on
   every 2nd frame (for angle and curvature; the per-frame tip angle is
   too noisy for that).
@@ -68,7 +70,21 @@ clip.
   median displacement from rest.
 - CN9018 strip: `band_tracker.py` marches along the dark band from its
   visible root for the rest-frame arc length, so it follows curls the
-  point tracker loses and lands on the same material point.
+  point tracker loses and lands on the same material point. The root
+  is seeded on the strip edge line nearest `y_root_hint`
+  (`root_center`), and the march only accepts a line within `search`
+  px of its prediction, re-centered by at most `max_shift` px, and at
+  least `rel_depth` x the running median depth. Without these guards
+  (the merged 2026-10-01 campaign) the march hopped onto a wire line
+  16 px below the strip near the root and ran past the tip into shadow
+  until the crop margin, so the rest arc length, and with it the
+  tracked material point, varied by ~40 px between clips. Displacement
+  is taken `tip_inset_px` inboard of the rest band end: the end itself
+  fades, and a march that stops there jitters (~1 px in no-drive
+  clips). To rerun the merged-campaign code bit for bit, drop
+  `y_root_hint` and `tip_inset_px` and set
+  `"march": {"search": null, "max_shift": null, "rel_depth": null}` in
+  `fingers.json`.
 - Bends: `trace_fingers.bends()` detects the three drive pulses per
   clip on the clean #4 trace. #3 is measured inside #4's drive windows
   (`campaign_post.windowed_bends()`), never by detection on its own
@@ -76,10 +92,9 @@ clip.
 
 ## Known limitations
 
-- The #3 band tracker's tip stop flips between two points about 13 px
-  apart, so single-clip #3 values are noisy (binned medians are fine).
-  At the largest bends it also stops short of the tip (`reach` < 1), so
-  late #3 displacement is under-read.
+- At the largest bends the #3 band tracker can stop short of the tip
+  (`reach` < 1), so late #3 displacement may be under-read; check
+  `reach` before trusting a late value.
 - ffmpeg `format=gray` differs between builds (one uses chroma), so two
   machines trace slightly different pixels. A re-trace should decode
   the raw Y plane instead, which is bit-exact across builds.

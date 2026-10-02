@@ -86,6 +86,63 @@ def test_march_follows_curvature():
     assert abs(m['theta'][-1] - (math.pi - phi_end)) < 0.12, m['theta'][-1]
 
 
+LEGACY = dict(search=None, max_shift=None, rel_depth=None)
+
+
+def _strip_with_wire_and_shadow():
+    """Strip edge line root (600, 200) -> tip (300, 230); near the root
+    a darker wire line 16 px below it; past the tip a faint shadow band
+    continuing to x = 100 (the RINSC #3 geometry, 2026-10-02)."""
+    img = np.full((420, 700), 200, np.uint8)
+    cv2.line(img, (600, 200), (300, 230), 70, 6, cv2.LINE_AA)
+    cv2.line(img, (600, 216), (540, 222), 40, 6, cv2.LINE_AA)
+    cv2.line(img, (300, 230), (100, 250), 165, 6, cv2.LINE_AA)
+    return bt.smooth(img)
+
+
+def _strip_y(x):
+    return 200.0 + (600.0 - x) * 30.0 / 300.0
+
+
+def test_march_guards_stay_on_strip_and_stop_at_tip():
+    img = _strip_with_wire_and_shadow()
+    th0 = math.atan2(30.0, -300.0)
+    seed = (600.0, 207.0)                  # between strip and wire lines
+    y0 = bt.root_center(img, seed[0], seed[1] - 4.0)
+    assert abs(y0 - 200.0) < 1.5, y0
+    new = bt.march(img, (600.0, y0), th0)
+    dev = [abs(y - _strip_y(x)) for x, y in new['pts']]
+    assert max(dev) < 3.0, max(dev)
+    tip = new['pts'][-1]
+    assert abs(tip[0] - 300.0) < 10, tip      # stops at the real tip
+    assert new['stopped'] == 'lost', new['stopped']
+    # the merged-campaign settings show both failures on the same image
+    old = bt.march(img, seed, th0, **LEGACY)
+    dev_old = [abs(y - _strip_y(x)) for x, y in old['pts'] if x > 520]
+    assert max(dev_old) > 10, max(dev_old)    # hopped onto the wire
+    assert old['pts'][-1][0] < 200, old['pts'][-1]   # ran on into shadow
+
+
+def test_root_center_vs_merged_run():
+    img = np.full((300, 100), 200, np.uint8)
+    for y, ink in ((100, 80), (108, 95), (117, 70)):   # strip, mid, wire
+        cv2.line(img, (0, y), (99, y), ink, 5)
+    sm = bt.smooth(img)
+    merged = bt.column_center(sm, 50, 60, 160, None, y_hint=100)
+    assert merged - 100.0 > 2.5, merged    # centroid between the lines
+    y = bt.root_center(sm, 50, 101.0)
+    assert abs(y - 100.0) < 1.5, y
+    assert bt.root_center(sm, 50, 250.0) is None
+
+
+def test_at_arc_interpolates_and_clamps():
+    m = {'pts': np.array([[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]]),
+         's': np.array([0.0, 10.0, 20.0])}
+    assert np.allclose(tf._at_arc(m, 15.0), [10.0, 5.0])
+    assert np.allclose(tf._at_arc(m, 25.0), [10.0, 10.0])   # short march
+    assert np.allclose(tf._at_arc(m, -3.0), [0.0, 0.0])
+
+
 def test_column_center_and_resample():
     img = _band_image([(650.0, 200.0), (100.0, 200.0)])
     y = bt.column_center(img, 600, 150, 250, None)

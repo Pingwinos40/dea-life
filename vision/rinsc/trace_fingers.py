@@ -99,6 +99,15 @@ def frames(path, keyframes_only=False):
         p.wait()
 
 
+def _at_arc(m, s_ref):
+    """Point of a band march at arc length s_ref, clamped to the traced
+    arc (a march that stopped short returns its last point)."""
+    s = m['s']
+    s_ref = min(max(float(s_ref), 0.0), float(s[-1]))
+    return np.array([np.interp(s_ref, s, m['pts'][:, 0]),
+                     np.interp(s_ref, s, m['pts'][:, 1])])
+
+
 def box_in_crop(box):
     cx, cy = CFG['crop'][0], CFG['crop'][1]
     x0, y0, x1, y1 = box
@@ -169,25 +178,42 @@ def trace_clip(path):
             xr = lc['x_root'] - cx0
             ylo, yhi = lc['y_lo'] - cy0, lc['y_hi'] - cy0
             st_ = line_state.get(lname)
-            yh = None if st_ is None else st_['root_y']
-            y0 = bt.column_center(sm_img, xr, ylo, yhi, None, y_hint=yh)
+            if lc.get('y_root_hint') is None:      # merged-campaign seeding
+                yh = None if st_ is None else st_['root_y']
+                y0 = bt.column_center(sm_img, xr, ylo, yhi, None, y_hint=yh)
+            else:
+                # seed on the strip line itself, never on the centroid of
+                # the merged strip/middle/wire run (2026-10-02)
+                yh = (lc['y_root_hint'] - cy0 if st_ is None
+                      else st_['root_y'])
+                y0 = bt.root_center(sm_img, xr, yh)
             if y0 is None:
                 y0 = yh
             m = None
             if y0 is not None:
                 m = bt.march(sm_img, (xr, y0), math.radians(lc['th0_deg']),
-                             length=None if st_ is None else st_['L0'])
+                             length=None if st_ is None else st_['L0'],
+                             **lc.get('march', {}))
             ok = m is not None and len(m['pts']) >= 3
+            # the tracked "tip" is the material point tip_inset_px inboard
+            # of the rest tip: the band end itself rounds off and fades,
+            # and once the march stops there its last point jitters
+            # (y sd 1.1 px in no-drive clips vs 0.3 px one node inboard,
+            # 2026-10-02 validation); 0 = the band end (merged campaign)
+            inset = float(lc.get('tip_inset_px', 0.0))
             if st_ is None:                # frame 0 = rest reference
                 if not ok:
                     raise RuntimeError(f'{lname}: no rest centerline')
+                L0 = float(m['s'][-1])
                 st_ = line_state[lname] = {
-                    'L0': float(m['s'][-1]), 'tip0': m['pts'][-1].copy(),
+                    'L0': L0, 'tip0': (m['pts'][-1].copy() if inset == 0
+                                       else _at_arc(m, L0 - inset)),
                     'th_tip0': float(m['theta'][-1]), 'root_y': y0}
             rec = {}
             if ok:
                 st_['root_y'] = y0
-                tip = m['pts'][-1]
+                tip = (m['pts'][-1] if inset == 0
+                       else _at_arc(m, st_['L0'] - inset))
                 k_root = min(10, len(m['theta']) - 1)
                 ang = math.degrees(float(m['theta'][-1] - m['theta'][k_root]))
                 d = tip - st_['tip0']

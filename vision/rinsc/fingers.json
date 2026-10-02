@@ -67,6 +67,9 @@
       "y_lo": 990,
       "y_hi": 1140,
       "th0_deg": 180.0,
+      "y_root_hint": 1055,
+      "tip_inset_px": 25,
+      "_comment_guards": "y_root_hint: frame-0 root seed in raw px; the strip edge line sits at y ~1052-1058 at x_root, a wire line at ~1070 (2026-10-02). tip_inset_px: the tracked point sits this far inboard of the rest band end (the end itself jitters). Optional \"march\": {kwargs} overrides band_tracker.march; {\"search\": null, \"max_shift\": null, \"rel_depth\": null} with no y_root_hint and no tip_inset_px reruns the merged-campaign code bit for bit.",
       "_comment": "band_tracker line-following of the strip's lower edge from its visible root (x_root, just inside the lit diffuser; the true clamp is hidden over the frame member). Arc length fixed from each clip's rest frame (frame 0)."
     }
   },

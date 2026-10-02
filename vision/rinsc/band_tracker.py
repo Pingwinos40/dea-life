@@ -10,6 +10,21 @@ CN9018 strip curls past 70 deg), and marching a FIXED arc length taken
 from the rest frame lands on the same material point (the tip) even
 when the other finger closes in.
 
+Continuity guards (2026-10-02, the "#3 tip flip" from the merged
+campaign): near the root a wire runs ~16 px below the strip edge and
+is sometimes the darker line, so re-centering on the darkest line in
+the central half of the profile hopped onto it and back (+~30 px of
+arc); past the tip the march kept going through faint shadow until
+the crop margin, so each clip's rest arc length L0 measured the path
+to the crop edge, not to the tip. Rest L0 was multimodal (380 / 390 /
+395-400 px) and correlated with the #3 peak (r = 0.55). The guards:
+look for the line only within `search` px of the prediction, treat a
+re-centering larger than `max_shift` px as a lost step, and treat a
+line shallower than `rel_depth` x the running median depth as lost.
+search=None, max_shift=None, rel_depth=None reproduce the
+merged-campaign code bit for bit (the stored 2026-10-01 traces differ
+from that code itself by <= 3e-4 px, an environment effect).
+
 Coordinates are (x, y) in whatever image is passed (y down). Pure
 numpy/scipy/cv2, no hardware.
 """
@@ -30,9 +45,16 @@ def _profile(img, p, theta, half, step=1.0):
     return s, vals
 
 
-def _band_center(s, vals, bg, min_depth, ridge_frac=0.3, n_sh=4):
+def _band_center(s, vals, bg, min_depth, ridge_frac=0.3, n_sh=4,
+                 search=None):
     """Offset of the dark line nearest s=0 (darkness centroid of its
     half-depth span), its width and depth; None when there is no line.
+
+    search None: the darkest point in the central half of the profile
+    (the merged-campaign behavior, which can pick a neighboring line).
+    search = w: the darkest point within |s| <= w, and the half-depth
+    span is clipped to the same window, so a neighbor line outside it
+    can neither be picked nor pull the centroid.
 
     A valid line is a local minimum with BRIGHTER ground on both sides:
     each shoulder must sit at least ridge_frac * depth above the line's
@@ -43,8 +65,15 @@ def _band_center(s, vals, bg, min_depth, ridge_frac=0.3, n_sh=4):
     if bg is None:                       # local background
         bg = float(np.percentile(vals, 90))
     dark = bg - vals
-    q = len(dark) // 4
-    i0 = int(np.argmax(dark[q: 3 * q])) + q
+    if search is None:
+        q = len(dark) // 4
+        lo_lim, hi_lim = q, 3 * q - 1
+    else:
+        inside = np.flatnonzero(np.abs(s) <= search)
+        lo_lim, hi_lim = int(inside[0]), int(inside[-1])
+    i0 = int(np.argmax(dark[lo_lim:hi_lim + 1])) + lo_lim
+    if search is None:                   # span may run the whole profile
+        lo_lim, hi_lim = 0, len(dark) - 1
     depth = float(dark[i0])
     if depth < min_depth:
         return None
@@ -54,10 +83,10 @@ def _band_center(s, vals, bg, min_depth, ridge_frac=0.3, n_sh=4):
         return None
     half_level = 0.5 * depth
     lo = i0
-    while lo > 0 and dark[lo - 1] > half_level:
+    while lo > lo_lim and dark[lo - 1] > half_level:
         lo -= 1
     hi = i0
-    while hi < len(dark) - 1 and dark[hi + 1] > half_level:
+    while hi < hi_lim and dark[hi + 1] > half_level:
         hi += 1
     w = np.clip(dark[lo:hi + 1] - half_level, 0, None)
     if w.sum() <= 0:
@@ -85,6 +114,24 @@ def column_center(img, x, y_lo, y_hi, bg, y_hint=None, min_depth=25):
     if y_hint is None:
         return max(cents, key=lambda c: c[1])[0]
     return min(cents, key=lambda c: abs(c[0] - y_hint))[0]
+
+
+def root_center(img, x, y_hint, search=4.0, min_depth=25, half=30):
+    """Darkness-centroid y of the line nearest y_hint in column x, looked
+    for within +/-search px of the hint; None if no line there.
+
+    column_center merges adjacent dark runs: at the RINSC strip root the
+    strip edge (~1052-1055), a middle line (~1060-1063) and a wire
+    (~1070-1072) form one run whose centroid (~1064-1066) sits between
+    lines, so the march started off-line (2026-10-02). This seeds on the
+    line itself."""
+    col_x = float(x)
+    s = np.arange(-half, half + 1.0)
+    vals = map_coordinates(img, [y_hint + s, np.full_like(s, col_x)],
+                           order=1, mode='nearest')
+    got = _band_center(s, vals, None, min_depth, ridge_frac=0.0,
+                       search=search)
+    return None if got is None else float(y_hint + got[0])
 
 
 def root_start(img, x_root, y_lo, y_hi, bg=None, dir_sign=-1, fit_px=30):
@@ -120,15 +167,22 @@ def root_start(img, x_root, y_lo, y_hi, bg=None, dir_sign=-1, fit_px=30):
 
 
 def march(img, p0, theta0, length=None, ds=4.0, half=30, bg=None,
-          min_depth=25, max_lost=4, alpha=0.5, max_turn_deg=12.0):
+          min_depth=25, max_lost=4, alpha=0.5, max_turn_deg=12.0,
+          search=6.0, max_shift=5.0, rel_depth=0.5, n_depth_ref=5):
     """Follow the band from p0/theta0. Stops at `length` px of arc (if
     given) or after max_lost consecutive steps without contrast. Returns
     dict: pts (N,2), s (arc length at each point), theta (heading at
-    each point), widths, stopped ('length' | 'lost' | 'edge')."""
+    each point), widths, depths, stopped ('length' | 'lost' | 'edge').
+
+    Continuity guards (module docstring): `search` bounds where the line
+    is looked for, a re-centering beyond `max_shift` px counts as a lost
+    step, and once n_depth_ref steps are accepted a line shallower than
+    rel_depth x their median depth counts as lost. None disables each
+    (all three None = the merged-campaign behavior)."""
     h, w = img.shape
     p = np.array(p0, float)            # bg None = per-profile background
     th = float(theta0)
-    pts, ss, ths, wids = [p.copy()], [0.0], [th], []
+    pts, ss, ths, wids, deps = [p.copy()], [0.0], [th], [], []
     arc = 0.0
     lost = 0
     max_turn = math.radians(max_turn_deg)
@@ -140,10 +194,19 @@ def march(img, p0, theta0, length=None, ds=4.0, half=30, bg=None,
             break
         q = p + step * np.array([math.cos(th), math.sin(th)])
         if not (half < q[0] < w - half and half < q[1] < h - half):
-            stopped = 'edge'
+            # coasting into the margin after losing the line is a 'lost'
+            # stop (the tail is dropped below), not a band cut by the edge
+            stopped = 'lost' if lost else 'edge'
             break
         s, vals = _profile(img, q, th, half)
-        got = _band_center(s, vals, bg, min_depth)
+        got = _band_center(s, vals, bg, min_depth, search=search)
+        if got is not None and max_shift is not None and \
+                abs(got[0]) > max_shift:
+            got = None                             # a jump, not our line
+        if got is not None and rel_depth is not None and \
+                len(deps) >= n_depth_ref and \
+                got[2] < rel_depth * float(np.median(deps)):
+            got = None                             # faded: past the tip
         if got is None:
             lost += 1
             if lost > max_lost:
@@ -153,7 +216,8 @@ def march(img, p0, theta0, length=None, ds=4.0, half=30, bg=None,
             pts.append(p.copy()); ss.append(arc); ths.append(th)
             continue
         lost = 0
-        c, wd, _dep = got
+        c, wd, dep = got
+        deps.append(dep)
         nx, ny = -math.sin(th), math.cos(th)
         new = q + c * np.array([nx, ny])
         d = new - p
@@ -169,7 +233,7 @@ def march(img, p0, theta0, length=None, ds=4.0, half=30, bg=None,
         pts, ss, ths = pts[:-lost], ss[:-lost], ths[:-lost]
     return {'pts': np.array(pts), 's': np.array(ss),
             'theta': np.array(ths), 'widths': np.array(wids),
-            'stopped': stopped}
+            'depths': np.array(deps), 'stopped': stopped}
 
 
 def resample(pts, s, n):
