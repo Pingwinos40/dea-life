@@ -49,7 +49,8 @@ folder (read-only by design — stopping HV requires bench presence).
 - `hal/` — DriveSource / MonitorSource / Camera / EnvironmentSource;
   BK4055B+Trek, MSO24, DFK camera, manual environment, full mock rig
 - `vision/` — planar adapter (vendored sldea_edge) + bender side-view
-  pipeline + capture + replay CLI
+  pipeline + capture + replay CLI; `vision/rinsc/` replays the RINSC
+  Cs-137 corpus (roadmap 8)
 - `analysis/` — trend reduction, Weibull (censoring-correct), report
   generator, compliance matrix, figure export
 - `gui/` — Tkinter app (Setup · Pre-flight · Run · Review · Campaign)

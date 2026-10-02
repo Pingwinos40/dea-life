@@ -151,7 +151,9 @@ BENCH_TEST.md §P–§T and §U.
    backlight.
 7. Several specimens per run (open question 2).
 8. RINSC 159 h corpus replay: tip displacement and bend angle vs time
-   and dose (`vision/bender_replay.py`).
+   and dose. Traced and post-processed with the fixture-specific
+   `vision/rinsc/` pipeline (in the repo since 2026-10-02); the
+   generic path is `vision/bender_replay.py`.
 9. Surrogate 2D N-node bender model fitted to extracted centerlines.
 10. Declared-drive mode for untethered in-chamber circuits.
 11. Convergence-driven sample size + Weibayes bound in the campaign
