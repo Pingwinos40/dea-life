@@ -1,0 +1,74 @@
+{
+  "_comment": "RINSC fixture layout in RAW frame pixels (2592x1944). The raw frame is the hanging-down view rotated 90 deg clockwise: raw top->bottom = hanging view left->right = actuators #1..#4, source on the left (author, 2026-09-30). Boxes are [x0, y0, x1, y1] around each finger AT REST; the clamp is at the right (x ~1825), the free end is the left `tip_frac`. Exposure started ~at the first clip (T0 = 2025-11-17 15:17:51). Fingers are 20x40 mm with ~38 mm hanging free; the visible 40 mm length of #3 is ~532 px at rest, so ~0.075 mm/px (fisheye: +/-10%, not undistorted).",
+  "crop": [
+    1250,
+    150,
+    1900,
+    1550
+  ],
+  "fps": 32.0,
+  "fingers": {
+    "UVRSE_plate": {
+      "material": "UV-RSE",
+      "box": [
+        1300,
+        170,
+        1810,
+        400
+      ],
+      "tip_frac": 0.3,
+      "actuator": 1,
+      "source_mm": 260,
+      "dose_rate_gy_h": 1.6978
+    },
+    "UVRSE_strip": {
+      "material": "UV-RSE",
+      "box": [
+        1300,
+        650,
+        1840,
+        810
+      ],
+      "tip_frac": 0.3,
+      "actuator": 2,
+      "source_mm": 280,
+      "dose_rate_gy_h": 1.4632
+    },
+    "CN9018_strip": {
+      "material": "CN9018",
+      "box": [
+        1290,
+        950,
+        1850,
+        1190
+      ],
+      "tip_frac": 0.3,
+      "actuator": 3,
+      "source_mm": 310,
+      "dose_rate_gy_h": 1.1942
+    },
+    "CN9018_plate": {
+      "material": "CN9018",
+      "box": [
+        1260,
+        1240,
+        1760,
+        1510
+      ],
+      "tip_frac": 0.3,
+      "actuator": 4,
+      "source_mm": 330,
+      "dose_rate_gy_h": 1.0537
+    }
+  },
+  "lines": {
+    "CN9018_strip": {
+      "x_root": 1660,
+      "y_lo": 990,
+      "y_hi": 1140,
+      "th0_deg": 180.0,
+      "_comment": "band_tracker line-following of the strip's lower edge from its visible root (x_root, just inside the lit diffuser; the true clamp is hidden over the frame member). Arc length fixed from each clip's rest frame (frame 0)."
+    }
+  },
+  "mm_per_px_approx": 0.075
+}

@@ -5,3 +5,6 @@ test_failures/
 *.log
 # Run data never enters the repo (lives under data_root)
 dea-life-runs/
+# Local-only material (notes, reference docs, pointers to sample data).
+# Large data stays off OneDrive; see local/*/README.md
+local/
