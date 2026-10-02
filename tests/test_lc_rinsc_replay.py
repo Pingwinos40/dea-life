@@ -135,6 +135,18 @@ def test_root_center_vs_merged_run():
     assert bt.root_center(sm, 50, 250.0) is None
 
 
+def test_tv_to_full_lut():
+    lut = tf.TV_TO_FULL
+    assert lut.dtype == np.uint8 and lut.shape == (256,)
+    assert lut[16] == 0 and lut[235] == 255     # tv-range endpoints
+    assert lut[0] == 0 and lut[255] == 255      # clipped outside
+    assert lut[126] == 128                      # 110 * 255 / 219 = 128.08
+    assert np.all(np.diff(lut.astype(int)) >= 0)
+    # no ties: every value sits >= 1/219 away from a .5 boundary
+    v = (np.arange(16, 236) - 16) * 255.0 / 219.0
+    assert np.abs(v - np.floor(v) - 0.5).min() > 1.0 / 220
+
+
 def test_at_arc_interpolates_and_clamps():
     m = {'pts': np.array([[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]]),
          's': np.array([0.0, 10.0, 20.0])}
