@@ -135,6 +135,18 @@ def test_root_center_vs_merged_run():
     assert bt.root_center(sm, 50, 250.0) is None
 
 
+def test_column_lines_finds_every_line_darkest_first():
+    img = np.full((300, 100), 200, np.uint8)
+    for y, ink in ((100, 80), (130, 40), (170, 120)):  # strip, wire, faint
+        cv2.line(img, (0, y), (99, y), ink, 5)
+    ys = bt.column_lines(bt.smooth(img), 50, 60, 220)
+    assert len(ys) == 3, ys
+    assert abs(ys[0] - 130) <= 1 and abs(ys[1] - 100) <= 1 \
+        and abs(ys[2] - 170) <= 1, ys
+    assert bt.column_lines(np.full((300, 100), 200.0, np.float32),
+                           50, 60, 220) == []
+
+
 def test_tv_to_full_lut():
     lut = tf.TV_TO_FULL
     assert lut.dtype == np.uint8 and lut.shape == (256,)

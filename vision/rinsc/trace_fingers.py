@@ -217,6 +217,28 @@ def trace_clip(path):
                 m = bt.march(sm_img, (xr, y0), math.radians(lc['th0_deg']),
                              length=None if st_ is None else st_['L0'],
                              **lc.get('march', {}))
+            # root re-capture (2026-10-05): late in the campaign the strip
+            # root swings ~30 px down in each bend and sweeps back up across
+            # a static wire line; the +/-4 px chained seed latched onto the
+            # wire and every later frame stopped at 21.6 % of the arc (46
+            # clips, T 127-159 h, re-trace v2). When the march falls short,
+            # re-seed on every dark line in the root column and keep the
+            # one that reaches furthest (nearest the previous root on ties).
+            # Never fires on a full-length march, so such clips are unchanged.
+            retry = lc.get('root_retry_reach')
+            if (retry is not None and st_ is not None and m is not None
+                    and m['s'][-1] < retry * st_['L0']):
+                best = (m['s'][-1], -abs(y0 - yh), y0, m)
+                for yc in bt.column_lines(sm_img, xr, ylo, yhi):
+                    yc = bt.root_center(sm_img, xr, yc) or yc
+                    mc = bt.march(sm_img, (xr, yc),
+                                  math.radians(lc['th0_deg']),
+                                  length=st_['L0'], **lc.get('march', {}))
+                    # reach within 1 px counts as a tie
+                    key = (round(mc['s'][-1]), -abs(yc - yh))
+                    if key > (round(best[0]), best[1]):
+                        best = (mc['s'][-1], -abs(yc - yh), yc, mc)
+                y0, m = best[2], best[3]
             ok = m is not None and len(m['pts']) >= 3
             # the tracked "tip" is the material point tip_inset_px inboard
             # of the rest tip: the band end itself rounds off and fades,
