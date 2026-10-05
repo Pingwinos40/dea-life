@@ -116,6 +116,19 @@ def column_center(img, x, y_lo, y_hi, bg, y_hint=None, min_depth=25):
     return min(cents, key=lambda c: abs(c[0] - y_hint))[0]
 
 
+def column_lines(img, x, y_lo, y_hi, min_depth=25):
+    """y of every dark line (local darkness maximum >= min_depth below
+    the column's 90th-percentile background) in column x, y_lo..y_hi,
+    darkest first. Root re-seed candidates (2026-10-05)."""
+    col = img[y_lo:y_hi, int(x)].astype(np.float32)
+    dark = float(np.percentile(col, 90)) - col
+    peaks = [i for i in range(1, len(dark) - 1)
+             if dark[i] >= dark[i - 1] and dark[i] > dark[i + 1]
+             and dark[i] >= min_depth]
+    peaks.sort(key=lambda i: -dark[i])
+    return [float(y_lo + i) for i in peaks]
+
+
 def root_center(img, x, y_hint, search=4.0, min_depth=25, half=30):
     """Darkness-centroid y of the line nearest y_hint in column x, looked
     for within +/-search px of the hint; None if no line there.

@@ -82,8 +82,13 @@ clip.
   tracked material point, varied by ~40 px between clips. Displacement
   is taken `tip_inset_px` inboard of the rest band end: the end itself
   fades, and a march that stops there jitters (~1 px in no-drive
-  clips). To rerun the merged-campaign code bit for bit, drop
-  `y_root_hint` and `tip_inset_px` and set
+  clips). Each frame seeds the root from the previous frame's root; if
+  the march then falls short of `root_retry_reach` x L0, it re-seeds on
+  every dark line in the root column and keeps the furthest-reaching
+  march (late in the campaign the root swings across a static wire
+  line, and the chained seed used to latch onto it). To rerun the
+  merged-campaign code bit for bit, drop `y_root_hint`, `tip_inset_px`
+  and `root_retry_reach` and set
   `"march": {"search": null, "max_shift": null, "rel_depth": null}` in
   `fingers.json`.
 - Bends: `trace_fingers.bends()` detects the three drive pulses per
