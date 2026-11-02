@@ -41,7 +41,7 @@ Robotic Actuators", presented as a poster abstract at the IROS 2026
 SRW workshop (no archival paper). Four benders (a UV-RSE pair and a
 CN9018 pair, 20×40 mm) spent 551 h in a 1.48×10¹² Bq (40 Ci) Cs-137
 field at the Rhode Island Nuclear Science Center, for an estimated
-581–936 Gy total ionizing dose. The CN9018 pair actuated on camera
+617–995 Gy total ionizing dose. The CN9018 pair actuated on camera
 until the unshielded drive electronics stopped at 159 h (about 207 Gy
 at the electronics) and still worked after retrieval; the UV-RSE pair
 was inconclusive because of a fabrication defect. About 2,385 clips
