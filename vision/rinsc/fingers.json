@@ -1,5 +1,6 @@
 {
   "_comment": "RINSC fixture layout in RAW frame pixels (2592x1944). The raw frame is the hanging-down view rotated 90 deg clockwise: raw top->bottom = hanging view left->right = actuators #1..#4, source on the left (author, 2026-09-30). Boxes are [x0, y0, x1, y1] around each finger AT REST; the clamp is at the right (x ~1825), the free end is the left `tip_frac`. Exposure started ~at the first clip (T0 = 2025-11-17 15:17:51). Fingers are 20x40 mm with ~38 mm hanging free; the visible 40 mm length of #3 is ~532 px at rest, so ~0.075 mm/px (fisheye: +/-10%, not undistorted).",
+  "_comment_dose_rate": "dose_rate_gy_h: Cs-137 point-source dose rate in PMMA at source_mm (40 Ci, inverse square, mu_en/rho 0.0319 cm2/g), set so rate x 551 h gives the corrected TIDs 995 / 858 / 700 / 617 Gy (2026-11-02). The earlier 1.6978 / 1.4632 / 1.1942 / 1.0537 were the poster TIDs over 551 h, which had been computed for an effective 518 h, so every dose was 6.3 % low.",
   "crop": [
     1250,
     150,
@@ -19,7 +20,7 @@
       "tip_frac": 0.3,
       "actuator": 1,
       "source_mm": 260,
-      "dose_rate_gy_h": 1.6978
+      "dose_rate_gy_h": 1.806
     },
     "UVRSE_strip": {
       "material": "UV-RSE",
@@ -32,7 +33,7 @@
       "tip_frac": 0.3,
       "actuator": 2,
       "source_mm": 280,
-      "dose_rate_gy_h": 1.4632
+      "dose_rate_gy_h": 1.557
     },
     "CN9018_strip": {
       "material": "CN9018",
@@ -45,7 +46,7 @@
       "tip_frac": 0.3,
       "actuator": 3,
       "source_mm": 310,
-      "dose_rate_gy_h": 1.1942
+      "dose_rate_gy_h": 1.270
     },
     "CN9018_plate": {
       "material": "CN9018",
@@ -58,7 +59,7 @@
       "tip_frac": 0.3,
       "actuator": 4,
       "source_mm": 330,
-      "dose_rate_gy_h": 1.0537
+      "dose_rate_gy_h": 1.120
     }
   },
   "lines": {
